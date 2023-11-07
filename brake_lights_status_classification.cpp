@@ -41,8 +41,8 @@ int main(int argc, char** argv)
     
     // Features 
 
-    double L_min, L_max, a_min, a_max; // maximum value of pixels in the L and a channel 
-    Point L_minIdx, L_maxIdx, a_minIdx, a_maxIdx; // (u_i, v_i)
+    double L_min, L_max, a_min, a_max; // Maximum value of pixels in the L and a channel 
+    Point L_minIdx, L_maxIdx, a_minIdx, a_maxIdx; // Position in the matrix
     minMaxLoc(lab_channels[L], &L_max, &L_min, &L_minIdx, &L_minIdx); 
     minMaxLoc(lab_channels[a], &a_max, &a_min, &a_minIdx, &a_maxIdx); 
     
