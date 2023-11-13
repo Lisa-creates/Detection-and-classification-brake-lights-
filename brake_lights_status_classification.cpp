@@ -3,8 +3,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>  
 
+#include <iostream>  
 #include <stdio.h>
 
 
@@ -46,6 +46,7 @@ int main(int argc, char** argv)
     minMaxLoc(lab_channels[L], &L_max, &L_min, &L_minIdx, &L_minIdx); 
     minMaxLoc(lab_channels[a], &a_max, &a_min, &a_minIdx, &a_maxIdx); 
     
+    double tau_A 
     // Wait for any keystroke in the window  
     waitKey(0);
     return 0; 
