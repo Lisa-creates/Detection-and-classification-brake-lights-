@@ -1,6 +1,8 @@
 *.jpg
 *.png
 
+out/
+
 # User-specific files
 *.rsuser
 *.suo
