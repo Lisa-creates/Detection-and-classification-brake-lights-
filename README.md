@@ -2,17 +2,13 @@
 [![cpp-linter](https://github.com/cpp-linter/cpp-linter-action/actions/workflows/cpp-linter.yml/badge.svg)](https://github.com/Lisa-creates/Detection-and-classification-brake-lights-/actions/workflows/linter.yml) 
 
 ### Запуск 
-1. Клонируем репозиторий  
+1. Открываем Visual Studio. На главной выбираем "Клонирование репозитория".
+2. В графе "Расположение репозитория" указываем
 
-`git clone https://github.com/Lisa-creates/Detection-and-classification-brake-lights-.git `
+`https://github.com/Lisa-creates/Detection-and-classification-brake-lights-.git`
 
-2. Переходим в папку с проектом 
-
-`cd Detection-and-classification-brake-lights-` 
-
-3. Запускаем CMake 
-
-`cmake .`
-
-4. Открываем проект, сгенерированный CMake. Открываем MS Visual Studio -> 'Открыть проект или решение'. Указываем путь к файлу `brake_lights_status_classification.vcxproj`. 
-5. Нажимаем на кнопку 'Локальный отладчик Windows'. 
+3. Жмём "Клонировать".
+4. Ждём пока прогрузится проект. Далее жмём кнопку "Сборка" и из выпадающего списка выбираем пункт "Собрать все".
+5. В Обозревателе решений дважды кликаем на "Представление папки".
+6. Жмём справа от кнопки "Выбрать элемент для запуска". Должен появиться выпадающий список, в котором необходимо выбрать пункт "brake_lights_status_classification.exe".
+7. Выбираем пункт "Отладка" и в выпадающем списке жмём на "Запуск без отладки".
