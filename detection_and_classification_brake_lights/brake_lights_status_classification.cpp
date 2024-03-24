@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+#include "brake_lights_detection.cpp"
+
 using namespace cv;
 using namespace std; 
 
@@ -30,12 +32,13 @@ void calculateMean(const cv::Mat& imagePart, double& L_means, double& a_means) {
     meanStdDev(imagePart, Arr_means, Arr_stddev);
     L_means = Arr_means[0];
     a_means = Arr_means[1];
-}
+} 
 
 int main(int argc, char** argv)
 {
 
-    Mat image = imread("C:\\IMG_1675.PNG");
+ //   Mat image = imread("C:\\IMG_1675.PNG"); 
+    Mat image = imread("C:\\testdrive1583149193.4818494.png"); 
 
     if (image.empty())
     {
@@ -44,23 +47,65 @@ int main(int argc, char** argv)
         return -1;
     } 
 
-    Mat Lab_image = convertToLab(image);
+    int new_width = 416;
+    int new_height = 416;
+    Mat resized_img;
+    //resize down
+    resize(image, resized_img, Size(new_width, new_height), INTER_LINEAR);
+    // let's upscale the image using new  width and height
+    imshow("Resized Down by defining height and width", resized_img);
 
-    namedWindow("RGB2Lab image", cv::WINDOW_NORMAL); //WINDOW_AUTOSIZE
-    imshow("RGB2Lab image", Lab_image); 
+    Mat Lab_image = convertToLab(resized_img);
+
+   // namedWindow("RGB2Lab image", cv::WINDOW_NORMAL); //WINDOW_AUTOSIZE
+ //   imshow("RGB2Lab image", Lab_image); 
+    
+    detector(Lab_image); 
 
     // Выделение каналов 
     vector<Mat> lab_channels(3);
 
     split(Lab_image, lab_channels);
 
+
     const int L = 0;
     const int a = 1;
     const int B = 2; 
-    
+
+ //   imshow("a channel", lab_channels[a]); 
+
+    Mat otsu_img;
+    double thresh = 0;
+    double maxValue = 255;
+
+    long double thres = cv::threshold(lab_channels[a], otsu_img, thresh, maxValue, THRESH_OTSU);
+
+    cout << "Otsu Threshold: " << thres << endl; 
+
+    imshow("Image after Otsu Threshold", otsu_img); 
+
+    // Применение анализа связанных компонентов
+    vector<double> labels, stats, centroids;
+    int numLabels = cv::connectedComponentsWithStats(otsu_img, labels, stats, centroids);
+
+ /*   for (int i = 1; i < numLabels; ++i) {
+        cv::rectangle(resized_img, cv::Point(stats.at<int>(i, cv::CC_STAT_LEFT), stats.at<int>(i, cv::CC_STAT_TOP)),
+            cv::Point(stats.at<int>(i, cv::CC_STAT_LEFT) + stats.at<int>(i, cv::CC_STAT_WIDTH),
+                stats.at<int>(i, cv::CC_STAT_TOP) + stats.at<int>(i, cv::CC_STAT_HEIGHT)),
+            cv::Scalar(0, 255, 0), 2);
+    }*/
+
+    // Отображение исходного изображения с метками
+    cv::imshow("Исходное изображение с метками", resized_img); 
+
+    cout << "labels: "  << " stats: " << stats << "centroids: " << centroids;
+
+    // Отображение исходного и выделенного изображения
+   // cv::imshow("Изображение с метками", outputImage); 
+
     // Features 
 
-    cv::Rect rect(0, 0, image.cols / 2, image.rows / 2); // Область фар
+    cv::Rect rect(0, 0, Lab_image.cols / 2, Lab_image.rows / 2); // Область фар
     cv::Mat croppedL = lab_channels[L](rect).clone();
     cv::Mat croppedA = lab_channels[a](rect).clone();
 
