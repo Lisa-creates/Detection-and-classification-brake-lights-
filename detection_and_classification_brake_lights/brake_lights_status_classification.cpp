@@ -48,7 +48,7 @@ void filterStatsAndCentroids(const cv::Mat& stats, const cv::Mat& centroids, cv:
         int width = stats.at<int>(r, cv::CC_STAT_WIDTH);
         int height = stats.at<int>(r, cv::CC_STAT_HEIGHT);
 
-        if (!(width == resizedImage.cols && height == resizedImage.rows) && !(width == 1 && height == 1)) {
+        if (!(width == resizedImage.cols && height == resizedImage.rows) && !(width == 1 && height == 1) && stats.at<int>(r, cv::CC_STAT_AREA) >= 0) { // 
             filteredStats.push_back(stats.row(r));
             filteredCentroids.push_back(centroids.row(r));
         }
@@ -58,8 +58,9 @@ void filterStatsAndCentroids(const cv::Mat& stats, const cv::Mat& centroids, cv:
 int main(int argc, char** argv)
 { 
 
-    //   Mat image = imread("C:\\IMG_1675.PNG"); 
-    Mat image = imread("C:\\testdrive1583149193.4818494.png");
+   // Mat image = imread("C:\\testdrive1583149193.4818494.png"); 
+   // Mat image = imread("C:\\testdrive1583149150.6489925.png"); // красная 
+    Mat image = imread("C:\\testdrive1583149177.9194167.png");
 
     if (image.empty())
     {
@@ -121,16 +122,22 @@ int main(int argc, char** argv)
     filterStatsAndCentroids(stats, centroids, filteredStats, filteredCentroids, resized_img);
     cout << filteredStats; 
 
+ //   drawBoundingRectangles(resized_img, filteredStats);
+
     cv::Mat mm = stats.row(0); 
 
-    cout << "stats 0: " << mm.col(0) << " stats: " << stats.row(1).at<int>(0);
+    cout << "stats 0: " << mm.col(0) << " stats: " << centroids << endl; 
+
+ //   Point offset = centroids.row(0) - centroids.row(1); 
+
+  //  cout << offset
 
     Mat lateral_stats = detector_new(filteredStats, filteredCentroids, new_weidth / 2); 
 
     drawBoundingRectangles(resized_img, lateral_stats); 
     cv::imshow("Исходное изображение с метками", resized_img); 
 
-  // cout << "lateral" << lateral_stats;
+    cout << "lateral" << lateral_stats;
 
     // Features 
 
