@@ -46,10 +46,9 @@ double calculate_I_S(cv::Mat stats_i, cv::Mat stats_j, double tao_S, const cv::M
     
     Rect intersection = R_i & R_j;
     Rect unionRect = R_i | R_j; 
-    cout << "intersection " << intersection << "unionRect " << unionRect << endl;
+    // cout << "intersection " << intersection << "unionRect " << unionRect << endl;
     if (unionRect.area() != 0) {
         double I_S = float(intersection.area()) / float(unionRect.area()); 
-      //  cout << "I_S" << I_S << endl; 
 
         /*   if (intersection.area() > 0) {
                 std::cout << "Intersection found: " << intersection << std::endl;
@@ -109,7 +108,7 @@ double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const 
             double I_U = calculate_I_U(centroids_i.at<double>(0), centroids_j.at<double>(0), half_img_weight);
         }
         else {
-       //     right_and_left = true; 
+       //    right_and_left = true; 
             double I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
         }
 
@@ -153,14 +152,14 @@ int findThirdBrakeLight(const cv::Mat& stats, const cv::Mat& centroids, const st
     }
     cout << "I_tb" << max_I_tb << endl;
     return index_third_light;
-}
+} 
 
 
 Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_weight) {
 
-    double max_ij = -1.0; 
-    int tao_v = 60; 
-    float tao_S = 0.3; 
+    double max_ij = -1.0;
+    int tao_v = 60;
+    float tao_S = 0.3;
     float tao_tb = 0.7;
     double lambda_S = 0.2;
     double lambda_D = 0.4;
@@ -169,15 +168,14 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
     vector<int> vector_max = { 0, 0 };
 
     int total_sum = calculateTotalArea(stats);
-    cout << "total_sum" << total_sum; 
+    cout << "total_sum" << total_sum;
 
-    bool right_and_left = false; 
+    bool right_and_left = false;
 
     for (int i = 0; i < stats.rows; ++i) {
         for (int j = i + 1; j < stats.rows; ++j) {
             if (i != j) {
                 if (abs(centroids.row(i).at<double>(1) - centroids.row(j).at<double>(1)) < tao_v) {
-                    //  c0out << "I'm here"; 
                     double I_lb = calculate_I_lb(stats.row(i), centroids.row(i), stats.row(j), centroids.row(j), right_and_left, half_img_weight, lambda_S, lambda_D, lambda_U, tao_S, total_sum); // может сгенерировать исключение
                     if (I_lb > max_ij || max_ij == -1) {
                         max_ij = I_lb;
@@ -187,19 +185,25 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
                 }
             }
         }
-    } 
+    }
 
-    int index_third_light = findThirdBrakeLight(stats, centroids, vector_max, tao_tb); 
+    int index_third_light = findThirdBrakeLight(stats, centroids, vector_max, tao_tb);
 
     Mat brake_light;
 
-    if (max_ij != -1) {
-        brake_light.push_back(stats.row(vector_max[0])); 
-        brake_light.push_back(stats.row(vector_max[1])); 
-    } 
-    if (index_third_light != -1) 
+    if (max_ij != -1) { 
+        if (stats.row(vector_max[0]).at<int>(0) < stats.row(vector_max[1]).at<int>(0)) {
+            brake_light.push_back(stats.row(vector_max[0]));
+            brake_light.push_back(stats.row(vector_max[1]));
+        }
+        else {
+            brake_light.push_back(stats.row(vector_max[1])); 
+            brake_light.push_back(stats.row(vector_max[0])); 
+        }
+    }
+    if (index_third_light != -1)
         brake_light.push_back(stats.row(index_third_light));
 
-    return brake_light;
+    return brake_light; 
 
-}
+} 

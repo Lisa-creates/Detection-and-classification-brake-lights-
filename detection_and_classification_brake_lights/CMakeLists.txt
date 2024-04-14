@@ -4,7 +4,7 @@ set(OpenCV_DIR "C:/opencv/build") # Change to your path to OpenCV 'build' direct
 
 list(APPEND CMAKE_PREFIX_PATH ${OpenCV_DIR})
 
-add_executable(brake_lights_status_classification "brake_lights_status_classification.cpp")
+add_executable(brake_lights_status_classification "main.cpp")
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(brake_lights_status_classification ${OpenCV_LIBS}) 
