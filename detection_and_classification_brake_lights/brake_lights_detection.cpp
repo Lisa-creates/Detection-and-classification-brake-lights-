@@ -15,7 +15,7 @@ using namespace std;
 int calculateTotalArea(const cv::Mat& stats) {
     int total_sum = 0;
 
-    for (int r = 1; r < stats.rows; ++r) {
+    for (int r = 0; r < stats.rows; ++r) {
         total_sum += stats.row(r).at<int>(4); // Площадь прямоугольника из структуры stats
     }
 
@@ -77,9 +77,9 @@ double calculate_I_S(cv::Mat stats_i, cv::Mat stats_j, double tao_S, const cv::M
         return -1;
 }
 
-double calculate_I_D(int area_i, int area_j, int total_sum) {
+double calculate_I_D(int area_i, int area_j, float total_sum) {
     double I_D = (area_i + area_j) / total_sum;
-  //  cout << "I_D " << I_D << endl; 
+  //  cout << "I_D " << (area_i + area_j) / total_sum << endl;
     return I_D; 
 } 
 
@@ -99,27 +99,27 @@ double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const 
         cout << "WrongLambdaValue sum: " << lambda_S + lambda_D + lambda_U << endl << lambda_U;
         return -1.0;
     }
-    else { 
+    else {
         double I_S = calculate_I_S(stats_i, stats_j, tao_S, centroids_i, centroids_j);
-     //  cout << "I_S" << I_S << endl; 
-        double I_D = calculate_I_D(stats_i.at<int>(4), stats_j.at<int>(4), total_sum_rectangles);
+
+        if (I_S == -1)
+            return -1;
+
+        double I_D = calculate_I_D(stats_i.at<int>(4), stats_j.at<int>(4), float(total_sum_rectangles));
+      //  cout << endl << stats_i.at<int>(4) << "  " << stats_j.at<int>(4) <<"   " << float(total_sum_rectangles) << endl;
         double I_U = 0;
         if (stats_i.at<int>(0) < stats_i.at<int>(0)) {
             double I_U = calculate_I_U(centroids_i.at<double>(0), centroids_j.at<double>(0), half_img_weight);
         }
         else {
-       //    right_and_left = true; 
+            //    right_and_left = true; 
             double I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
         }
+        cout << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl;
 
-        if (I_S != -1)
-        {
-            double I_lb = lambda_S * I_S + lambda_D * I_D + lambda_U * I_U;
-            //    cout << "I_lb " << I_lb << endl;
-            return I_lb;
-        }
-        else
-            return -1; 
+        double I_lb = lambda_S * I_S + lambda_D * I_D + lambda_U * I_U;
+        cout << "I_lb " << I_lb << endl;
+        return I_lb;
     }
 } 
 
@@ -161,7 +161,7 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
     int tao_v = 60;
     float tao_S = 0.3;
     float tao_tb = 0.7;
-    double lambda_S = 0.2;
+    double lambda_S = 0.1;
     double lambda_D = 0.4;
     double lambda_U = 1 - lambda_S - lambda_D;
 
