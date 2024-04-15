@@ -83,12 +83,18 @@ double calculate_I_D(int area_i, int area_j, float total_sum) {
     return I_D; 
 } 
 
-double calculate_I_U(int u_R_i, int u_R_j, double half_img_weight) {
+double calculate_I_U(double u_R_i, double u_R_j, double half_img_weight) {
     double numerator = min(half_img_weight - u_R_i, u_R_j - half_img_weight);
     double denominator = max(half_img_weight - u_R_i, u_R_j - half_img_weight); 
-   // cout << "numerator " << numerator << "denominator " << denominator << endl; 
+
+    if (denominator == 0)
+        return 0.0; 
+
+  //  cout << "half_img_weight " << half_img_weight << "  u_R_i " << u_R_i << " numerator / denominator " << numerator / denominator << endl;
+  //  cout << "numerator " << numerator << " denominator " << denominator << " numerator / denominator " << numerator / denominator << endl;
+  //  cout << "b " << b;
     double I_U = max(0.0, numerator / denominator);
-    return I_U;
+    return I_U; 
 } 
 
 double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const cv::Mat& stats_j, const cv::Mat& centroids_j, bool& right_and_left, float half_img_weight, double lambda_S, double lambda_D, double lambda_U, float tao_S, int total_sum_rectangles) {
@@ -107,13 +113,14 @@ double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const 
 
         double I_D = calculate_I_D(stats_i.at<int>(4), stats_j.at<int>(4), float(total_sum_rectangles));
       //  cout << endl << stats_i.at<int>(4) << "  " << stats_j.at<int>(4) <<"   " << float(total_sum_rectangles) << endl;
-        double I_U = 0;
+        double I_U = 0; 
+        cout << endl << centroids_i << endl << " centroids_j.at<double>(0) " << centroids_j.at<double>(0) << "centroids_i.at<double>(0) " << centroids_i.at<double>(0); 
         if (stats_i.at<int>(0) < stats_i.at<int>(0)) {
-            double I_U = calculate_I_U(centroids_i.at<double>(0), centroids_j.at<double>(0), half_img_weight);
+            I_U = calculate_I_U(centroids_i.at<double>(0), centroids_j.at<double>(0), half_img_weight);
         }
         else {
             //    right_and_left = true; 
-            double I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
+            I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
         }
         cout << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl;
 
@@ -168,9 +175,11 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
     vector<int> vector_max = { 0, 0 };
 
     int total_sum = calculateTotalArea(stats);
-    cout << "total_sum" << total_sum;
+   // cout << "total_sum" << total_sum;
 
     bool right_and_left = false;
+
+    cout << "centroids " << centroids; 
 
     for (int i = 0; i < stats.rows; ++i) {
         for (int j = i + 1; j < stats.rows; ++j) {
