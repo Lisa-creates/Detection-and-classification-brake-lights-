@@ -12,11 +12,19 @@ using namespace cv;
 using namespace std; 
 
 
-int calculateTotalArea(const cv::Mat& stats) {
+int calculateTotalArea(const cv::Mat& stats, const cv::Mat& centroids, int tao_v) {
     int total_sum = 0;
 
-    for (int r = 0; r < stats.rows; ++r) {
-        total_sum += stats.row(r).at<int>(4); // Площадь прямоугольника из структуры stats
+    for (int i = 0; i < stats.rows; ++i) {
+        for (int j = i + 1; j < stats.rows; ++j) {
+            if (i != j) {
+                if (abs(centroids.row(i).at<double>(1) - centroids.row(j).at<double>(1)) < tao_v)
+                {
+                    total_sum += stats.row(i).at<int>(4); // Площадь прямоугольника из структуры stats 
+                    i++;
+                }
+            }
+        }
     }
 
     return total_sum;
@@ -185,7 +193,7 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
 
     float img_height = half_img_weight * 2; 
 
-    int total_sum = calculateTotalArea(stats);
+    int total_sum = calculateTotalArea(stats, centroids, tao_v);
    // cout << "total_sum" << total_sum;
    //  cout << "centroids " << centroids; 
     bool right_and_left = false;
