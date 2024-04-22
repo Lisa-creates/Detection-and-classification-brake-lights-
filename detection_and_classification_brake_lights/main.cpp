@@ -259,17 +259,16 @@ int main(int argc, char** argv)
     Mat data_l, data_r, data_third;
 
 
-    /* get_features_from_dataset(input_folders_test, new_weight, new_height, data_l, data_r, data_third, labels_test, labels_test_classifier);
+     get_features_from_dataset(input_folders_test, new_weight, new_height, data_l, data_r, data_third, labels_test, labels_test_classifier);
 
-      cout << endl << labels_test_classifier.size() << " data " << data_third.size() << endl;
+     cout << endl << labels_test_classifier.size() << " data " << data_third.size() << endl;
 
-      cout << endl << labels_test_classifier;
+     cout << endl << labels_test_classifier;
 
-      SVM_classifier_third_light(data_third, labels_test_classifier);
+     SVM_classifier_third_light(data_third, labels_test_classifier);
 
-  */
 
-    cout << "Hey" << endl;
+  //  cout << "Hey" << endl;
 
     Mat resized_img = image.clone();
     vector<Mat> lab_channels(3);
