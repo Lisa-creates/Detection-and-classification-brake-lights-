@@ -250,7 +250,8 @@ int main(int argc, char** argv)
 
     vector<string> input_folders_test = { "TRAIN/brake_TRAIN_OFF", "TRAIN/brake_ON_TRAIN" };
     vector<vector<int>> features_test;
-    Mat labels_test, labels_test_classifier;
+    Mat labels_test; 
+    Mat labels_test_classifier;
 
     int detecting_light_on = 0;
     int detecting_light_HSV = 0;
@@ -263,7 +264,7 @@ int main(int argc, char** argv)
 
      cout << endl << labels_test_classifier.size() << " data " << data_third.size() << endl;
 
-     cout << endl << labels_test_classifier;
+  //   cout << endl << labels_test_classifier;
 
      SVM_classifier_third_light(data_third, labels_test_classifier);
 
