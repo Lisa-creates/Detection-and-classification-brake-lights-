@@ -79,7 +79,9 @@ double calculate_I_S(cv::Mat stats_i, cv::Mat stats_j, double tao_S, const cv::M
 
 double calculate_I_D(int area_i, int area_j, float total_sum) {
     double I_D = (area_i + area_j) / total_sum;
-  //  cout << "I_D " << (area_i + area_j) / total_sum << endl;
+
+  //  cout << "I_D " << (area_i + area_j) / total_sum << endl;  
+
     return I_D; 
 } 
 
@@ -91,11 +93,11 @@ double calculate_I_U(double u_R_i, double u_R_j, double half_img_weight) {
   //  cout << "numerator " << numerator << " denominator " << denominator << " numerator / denominator " << numerator / denominator << endl; 
     
     if (denominator == 0.0 || numerator < 0.0 || denominator < 0.0)
-        return 0.0; 
+        return -1; 
 
   //  << " numerator / denominator " << numerator / denominator << endl;
-    
   //  cout << "b " << b; 
+
     double I_U = max(0.0, numerator / denominator);
     return I_U; 
 } 
@@ -104,7 +106,6 @@ double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const 
     const double EPSILON = 1e-6; // Погрешность для сравнения суммы с 1.0
 
     if (abs(lambda_S + lambda_D + lambda_U - 1.0) > EPSILON || lambda_U < 0) {
- //   if (lambda_S + lambda_D + lambda_U != 1.0 || lambda_U < 0) {// 
         cout << "WrongLambdaValue sum: " << lambda_S + lambda_D + lambda_U << endl << lambda_U;
         return -1.0;
     }
@@ -125,8 +126,11 @@ double calculate_I_lb(const cv::Mat& stats_i, const cv::Mat& centroids_i, const 
         else {
             //    right_and_left = true; 
             I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
-        }
-    //    cout << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl;
+        } 
+
+        if (I_U == -1)
+            return -1; 
+    //    cout << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl; 
 
         double I_lb = lambda_S * I_S + lambda_D * I_D + lambda_U * I_U;
      //   cout << "I_lb " << I_lb << endl;
@@ -147,14 +151,15 @@ double calculate_I_tb(double u_k, double u_l, double u_r) {
 
 int findThirdBrakeLight(const cv::Mat& stats, const cv::Mat& centroids, const std::vector<int>& vector_max, double tao_tb) {
     int index_third_light = -1; 
-    double max_I_tb = -1.0;
+    double max_I_tb = -1.0; 
+    int index_l_light = vector_max[0], index_r_light = vector_max[1];
      
     for (int i = 0; i < stats.rows; ++i) {
-        if (i != vector_max[0] && i != vector_max[1]) {
-            if (centroids.row(i).at<double>(1) <= (centroids.row(vector_max[0]).at<double>(1) + centroids.row(vector_max[1]).at<double>(1)) / 2) {
-                double I_tb = calculate_I_tb(centroids.row(i).at<double>(0), centroids.row(vector_max[0]).at<double>(0), centroids.row(vector_max[1]).at<double>(0));
+        if (i != index_l_light && i != index_r_light) {
+            if ((centroids.row(i).at<double>(1) <= (centroids.row(index_l_light).at<double>(1) + centroids.row(index_r_light).at<double>(1)) / 2) && ((stats.row(index_l_light).at<int>(4) + stats.row(index_r_light).at<int>(4)) >= stats.row(i).at<int>(4))) {
+                double I_tb = calculate_I_tb(centroids.row(i).at<double>(0), centroids.row(index_l_light).at<double>(0), centroids.row(index_r_light).at<double>(0));
              //   cout << "I_tb" << I_tb << endl;
-                if (I_tb > tao_tb && (I_tb > max_I_tb || index_third_light == -1) && (stats.row(vector_max[0]).at<int>(4) + stats.row(vector_max[1]).at<int>(4) >= stats.row(i).at<int>(4))) {
+                if (I_tb > tao_tb && (I_tb > max_I_tb || index_third_light == -1)) {
                     max_I_tb = I_tb;
                     index_third_light = i; 
                 }
@@ -178,19 +183,21 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
 
     vector<int> vector_max = { 0, 0 };
 
+    float img_height = half_img_weight * 2; 
+
     int total_sum = calculateTotalArea(stats);
    // cout << "total_sum" << total_sum;
-
+   //  cout << "centroids " << centroids; 
     bool right_and_left = false;
 
-  //  cout << "centroids " << centroids; 
+ 
 
     for (int i = 0; i < stats.rows; ++i) {
         for (int j = i + 1; j < stats.rows; ++j) {
             if (i != j) {
                 if (abs(centroids.row(i).at<double>(1) - centroids.row(j).at<double>(1)) < tao_v) {
                     double I_lb = calculate_I_lb(stats.row(i), centroids.row(i), stats.row(j), centroids.row(j), right_and_left, half_img_weight, lambda_S, lambda_D, lambda_U, tao_S, total_sum); // может сгенерировать исключение
-                    if (I_lb > max_ij || max_ij == -1) {
+                    if ((I_lb > max_ij || max_ij == -1) && (stats.row(i).at<int>(1) >= (img_height / 5) && stats.row(i).at<int>(1) <= (4 *img_height) / 5) && (stats.row(j).at<int>(1) >= (img_height / 5) && stats.row(j).at<int>(1) <= (4 * img_height) / 5)) {
                         max_ij = I_lb;
                         vector_max[0] = i;
                         vector_max[1] = j;
@@ -220,3 +227,4 @@ Mat detector_new(const cv::Mat& stats, const cv::Mat& centroids, float half_img_
     return brake_light; 
 
 } 
+

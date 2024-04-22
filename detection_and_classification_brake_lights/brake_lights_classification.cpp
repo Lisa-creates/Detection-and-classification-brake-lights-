@@ -1,5 +1,15 @@
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/ml.hpp>
+
+
 using namespace cv; 
+using namespace cv::ml;
 using namespace std; 
+
+
 
 struct Features {
     double maxValueL;
@@ -28,32 +38,120 @@ void calculateMean(const cv::Mat& imagePart, double& L_means, double& a_means) {
     a_means = Arr_means[1];
 } 
 
-void features() { 
+Mat features(const Mat current_rectangle, const vector<Mat> lab_channels, const double tao_L, const double tao_A, const Mat Lab_image) {
+    // Mat current_rectangle = lateral_stats.row(i);
+    const int L = 0;
+    const int a = 1;
+    const int B = 2;
 
+    cv::Rect R_i(current_rectangle.at<int>(cv::CC_STAT_LEFT), current_rectangle.at<int>(cv::CC_STAT_TOP), current_rectangle.at<int>(cv::CC_STAT_WIDTH), current_rectangle.at<int>(cv::CC_STAT_HEIGHT));
+    // Область фар 
 
+    cv::Mat croppedL = lab_channels[L](R_i).clone();
+    cv::Mat croppedA = lab_channels[a](R_i).clone();
 
-    for (int i = 0; i < lateral_stats.rows; ++i) {
+    double maxValueL, minValueL, meanValueL, pixelPercentageL, meanValueTotalL;
+    double maxValuea, minValuea, meanValuea, pixelPercentagea, meanValueTotala;
 
-        Mat current_rectangle = lateral_stats.row(i);
+    calculateFeaturesWithoutMean(croppedL, tao_L, maxValueL, minValueL, pixelPercentageL);
+    calculateFeaturesWithoutMean(croppedA, tao_A, maxValuea, minValuea, pixelPercentagea);
+    calculateMean(Lab_image(R_i), meanValueL, meanValuea);
+    calculateMean(Lab_image, meanValueTotalL, meanValueTotala);
 
-        cv::Rect R_i(current_rectangle.at<int>(cv::CC_STAT_LEFT), current_rectangle.at<int>(cv::CC_STAT_TOP), current_rectangle.at<int>(cv::CC_STAT_WIDTH), current_rectangle.at<int>(cv::CC_STAT_HEIGHT));
-        // Область фар 
+    vector<double> feat = { maxValueL, minValueL,  pixelPercentageL, maxValuea, minValuea, pixelPercentagea,  meanValueL, meanValuea, meanValueTotalL, meanValueTotala };
 
-        cv::Mat croppedL = lab_channels[L](R_i).clone();
-        cv::Mat croppedA = lab_channels[a](R_i).clone();
+    Mat feat_mat = Mat(feat).reshape(10, 1);
 
-        double maxValueL, minValueL, meanValueL, pixelPercentageL, tao_L = 128, meanValueTotalL;
-        double maxValuea, minValuea, meanValuea, pixelPercentagea, tao_A = 128, meanValueTotala;
+    // cout << "Max from function " << maxValueL << " Min from function " << minValueL << " PercentageL from function " << pixelPercentageL << '\n';
+   //  cout << "Mean_L " << meanValueL << "Mean_a " << meanValuea << '\n'; 
 
-        calculateFeaturesWithoutMean(croppedL, tao_L, maxValueL, minValueL, pixelPercentageL);
-        calculateFeaturesWithoutMean(croppedA, tao_A, maxValuea, minValuea, pixelPercentagea);
-        calculateMean(Lab_image(R_i), meanValueL, meanValuea);
-        calculateMean(Lab_image, meanValueTotalL, meanValueTotala); 
-        
-        vector<double> feat = { maxValueL, minValueL,  pixelPercentageL, maxValuea, minValuea, pixelPercentagea,  meanValueL, meanValuea, meanValueTotalL, meanValueTotala }; 
+    return feat_mat;
+} 
 
+void classifier_get_features(Mat& data_l, Mat& data_r, Mat& data_third, Mat& stats, const vector<Mat> channels, Mat& img) {
 
-        cout << "Max from function " << maxValueL << " Min from function " << minValueL << " PercentageL from function " << pixelPercentageL << '\n';
-        cout << "Mean_L " << meanValueL << "Mean_a " << meanValuea << '\n';
+    const int l = 0, r = 1, third = 2;
+    const double tao_L = 150, tao_A = 155; 
+
+    if (stats.rows >= 2) {
+        data_l.push_back(features(stats.row(l), channels, tao_L, tao_A, img));
+        data_r.push_back(features(stats.row(r), channels, tao_L, tao_A, img)); 
+
+        data_l.push_back(features(stats.row(r), channels, tao_L, tao_A, img));
+
+        if (stats.rows == 3) {
+            data_third.push_back(features(stats.row(third), channels, tao_L, tao_A, img));
+        } 
+        else {
+            data_third.push_back(features(stats.row(l), channels, tao_L, tao_A, img));
+        }
     }
-}
+} 
+
+
+void SVM_classifier_third_light(Mat data_third, Mat trainLabels) { 
+
+   // Mat dataMat(data_third.rows, data_third.cols, CV_32F);
+ /* for (int i = 0; i < dataMat.rows; ++i) {
+        for (int j = 0; j < dataMat.cols; ++j) {
+            dataMat.at<double>(i, j) = data_third.at<double>(i, j);
+        }
+    } */ 
+     
+  //  Mat trainLabelsMat(trainLabels.rows, trainLabels.cols, CV_32S);
+/*   for (int i = 0; i < trainLabelsMat.rows; ++i) {
+        trainLabelsMat.at<int>(i, 0) = trainLabels.at<int>(i, 0);
+    }  */
+
+  // cout << dataMat << endl; 
+ //  cout << trainLabelsMat;
+
+    // Set up SVM for OpenCV 3
+    Ptr<SVM> svm = SVM::create();
+    // Set SVM type
+    svm->setType(SVM::C_SVC);
+    // Set SVM Kernel to Radial Basis Function (RBF)
+    svm->setKernel(SVM::RBF);
+    // Set parameter C
+    svm->setC(12.5);
+    // Set parameter Gamma
+    svm->setGamma(0.50625);
+
+    // Train SVM on training data
+    Ptr<TrainData> td = TrainData::create(data_third, ROW_SAMPLE, trainLabels);
+    svm->trainAuto(td);
+
+    // Save trained model
+    svm->save("digits_svm_model.yml"); 
+
+
+    // Predict on training data
+    Mat predictedLabels;
+    svm->predict(data_third, predictedLabels);
+
+    // Calculate precision and recall
+    Mat confusionMatrix = Mat::zeros(10, 10, CV_32S); // Assuming 10 classes
+    for (int i = 0; i < data_third.rows; ++i) {
+        int trueLabel = trainLabels.at<int>(i, 0);
+        int predictedLabel = predictedLabels.at<float>(i, 0);
+        confusionMatrix.at<int>(trueLabel, predictedLabel)++;
+    }
+
+    for (int i = 0; i < confusionMatrix.rows; ++i) {
+        int truePositives = confusionMatrix.at<int>(i, i);
+        int falsePositives = 0;
+        int falseNegatives = 0;
+        for (int j = 0; j < confusionMatrix.cols; ++j) {
+            if (j != i) {
+                falseNegatives += confusionMatrix.at<int>(i, j);
+                falsePositives += confusionMatrix.at<int>(j, i);
+            }
+        }
+        double precision = truePositives / static_cast<double>(truePositives + falsePositives);
+        double recall = truePositives / static_cast<double>(truePositives + falseNegatives);
+        cout << "Class " << i << " - Precision: " << precision << ", Recall: " << recall << endl;
+    }
+
+    // Test on a held out test set
+ //   svm->predict(testMat, testResponse);
+} 
