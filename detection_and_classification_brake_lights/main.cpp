@@ -102,7 +102,7 @@ void get_rectangle_for_detector(const Mat channel, cv::Mat& filteredStats, cv::M
     Mat labels, stats, centroids;
     int numLabels = cv::connectedComponentsWithStats(otsu_img, labels, stats, centroids);
 
-    //    imwrite(std::string("Otsu_img.png").c_str(), otsu_img); 
+    imwrite(std::string("Otsu_img.png").c_str(), otsu_img); 
 
         /* Mat otsu_img2;
 
@@ -128,9 +128,9 @@ void get_rectangle_for_detector(const Mat channel, cv::Mat& filteredStats, cv::M
     filterStatsAndCentroids(stats, centroids, filteredStats, filteredCentroids, resized_img);
     //  cout << "After filtr" << filteredStats << endl; 
 
-    // drawBoundingRectangles(resized_img, filteredStats); 
+  //  drawBoundingRectangles(resized_img, filteredStats); 
 
-    // cv::imshow("with rectangels", resized_img);
+   // cv::imshow("with rectangels", resized_img);
 }
 
 void get_features_from_dataset(const vector<string>& input_folders_test, int new_weight, int new_height, Mat& data_l, Mat& data_r, Mat& data_third, Mat& labels_test, Mat& labels_test_classifier) {
@@ -229,13 +229,14 @@ int main(int argc, char** argv)
     // Mat image = imread("C:\\testdrive1583149193.4818494.png"); 
    // Mat image = imread("C:\\testdrive1583149150.6489925.png"); // красная 
   //  Mat image = imread("C:\\testdrive1583149169.625285.png"); // красная с включёнными 
-    Mat image = imread("C:\\testdrive1583149177.9194167.png"); // белая 
+   // Mat image = imread("C:\\testdrive1583149177.9194167.png"); // белая 
     //  Mat image = imread("C:\\testdrive1580902052.9363065.png");
      // Mat image = imread("C:\\11r.png"); 
 
-     // Mat image = imread("C:\\18r.png");
+    // Mat image = imread("C:\\18r.png");
 
-
+    Mat image = imread("C:\\testdrive1583149188.5726807.png"); 
+    
      //  Mat image = imread("C:\\red_off.png");
 
     if (image.empty())
@@ -248,27 +249,39 @@ int main(int argc, char** argv)
     int new_weight = 416;
     int new_height = 416;
 
-    vector<string> input_folders_test = { "TRAIN/brake_TRAIN_OFF", "TRAIN/brake_ON_TRAIN" };
+    vector<string> input_folders_train = { "TRAIN/brake_TRAIN_OFF", "TRAIN/brake_ON_TRAIN" };
+    
     vector<vector<int>> features_test;
-    Mat labels_test; 
-    Mat labels_test_classifier;
+    Mat labels_train; 
+    Mat labels_train_classifier;
 
     int detecting_light_on = 0;
     int detecting_light_HSV = 0;
     int total = 0;
 
     Mat data_l, data_r, data_third;
+/*
 
+     get_features_from_dataset(input_folders_train, new_weight, new_height, data_l, data_r, data_third, labels_train, labels_train_classifier);
+     
+     cout << endl << labels_train_classifier.size() << " data " << data_third.size() << endl;
 
-     get_features_from_dataset(input_folders_test, new_weight, new_height, data_l, data_r, data_third, labels_test, labels_test_classifier);
+     vector<string> input_folders_test = { "TEST/brake_TEST_OFF", "TEST/brake_ON_TEST" }; 
 
-     cout << endl << labels_test_classifier.size() << " data " << data_third.size() << endl;
+     Mat labels_test; 
+     Mat labels_test_classifier; 
+
+     Mat data_l_test, data_r_test, data_third_test; 
+
+     get_features_from_dataset(input_folders_test, new_weight, new_height, data_l_test, data_r_test, data_third_test, labels_test, labels_test_classifier);
+
+     cout << endl << labels_test_classifier.size() << " data " << data_third_test.size() << endl;
 
   //   cout << endl << labels_test_classifier;
 
-     SVM_classifier_third_light(data_third, labels_test_classifier);
+     SVM_classifier_third_light(data_third, labels_train_classifier, data_third_test, labels_test_classifier);  
 
-
+*/
   //  cout << "Hey" << endl;
 
     Mat resized_img = image.clone();
@@ -337,7 +350,7 @@ int main(int argc, char** argv)
     Mat data_l_(2, 10, CV_64F, data_l_array);
     Mat labels_test_classifier_(2, 1, CV_32S, labels_test_classifier_array);
 
-    SVM_classifier_third_light(data_l_, labels_test_classifier_);
+    //SVM_classifier_third_light(data_l_, labels_test_classifier_);
 
 
     /*for (int i = 0; i < data_l.size(); i++)

@@ -95,7 +95,7 @@ void classifier_get_features(Mat& data_l, Mat& data_r, Mat& data_third, Mat& sta
 } 
 
 
-void SVM_classifier_third_light(Mat data_third, Mat trainLabels) {
+void SVM_classifier_third_light(Mat data_third, Mat trainLabels, Mat data_third_test, Mat testLabels) {
      
    // cout << data_third;
 
@@ -113,7 +113,22 @@ void SVM_classifier_third_light(Mat data_third, Mat trainLabels) {
         }
     } 
 
-    cout << dataMat << endl; 
+
+    Mat testLabelsMat(testLabels.rows, testLabels.cols, CV_32S);
+    for (int i = 0; i < testLabelsMat.rows; ++i) {
+        testLabelsMat.at<int>(i, 0) = testLabels.at<int>(i, 0);
+    }
+
+    // cout << "Here" << trainLabelsMat;
+
+    Mat dataMat_test(data_third_test.rows, data_third_test.cols, CV_32F); 
+    for (int i = 0; i < dataMat_test.rows; ++i) {
+        for (int j = 0; j < dataMat_test.cols; ++j) {
+            dataMat_test.row(i).at<float>(j) = data_third_test.row(i).at<float>(j);
+        }
+    }
+
+    cout << dataMat_test << endl;
    
 
     // Set up SVM for OpenCV 3
@@ -122,13 +137,14 @@ void SVM_classifier_third_light(Mat data_third, Mat trainLabels) {
     svm->setType(SVM::C_SVC);
     // Set SVM Kernel to Radial Basis Function (RBF)
     svm->setKernel(SVM::RBF);
-    // Set parameter C
-    svm->setC(12.5);
+    // Set parameter C 
+   // svm->setC(12.5);
     // Set parameter Gamma
-    svm->setGamma(0.50625);
+   // svm->setGamma(0.50625);
 
     // Train SVM on training data
-    Ptr<TrainData> td = TrainData::create(data_third, ROW_SAMPLE, trainLabels); 
+    Ptr<TrainData> td = TrainData::create(data_third, ROW_SAMPLE, trainLabels);
+
     svm->trainAuto(td); 
 
     // Save trained model
@@ -137,12 +153,12 @@ void SVM_classifier_third_light(Mat data_third, Mat trainLabels) {
 
     // Predict on training data
     Mat predictedLabels; 
-    svm->predict(data_third, predictedLabels);
+    svm->predict(data_third_test, predictedLabels);
 
     // Calculate precision and recall
     Mat confusionMatrix = Mat::zeros(10, 10, CV_32S); // Assuming 10 classes
-    for (int i = 0; i < data_third.rows; ++i) {
-        int trueLabel = trainLabels.at<int>(i, 0);
+    for (int i = 0; i < data_third_test.rows; ++i) {
+        int trueLabel = testLabels.at<int>(i, 0);
         int predictedLabel = predictedLabels.at<float>(i, 0);
         confusionMatrix.at<int>(trueLabel, predictedLabel)++;
     }
