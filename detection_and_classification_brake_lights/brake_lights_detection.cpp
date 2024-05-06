@@ -165,7 +165,7 @@ int findThirdBrakeLight(const cv::Mat& stats, const cv::Mat& centroids, const st
     for (int i = 0; i < stats.rows; ++i) {
         if (i != index_l_light && i != index_r_light) {
             if ((centroids.row(i).at<double>(1) <= (centroids.row(index_l_light).at<double>(1) + centroids.row(index_r_light).at<double>(1)) / 2) && ((stats.row(index_l_light).at<int>(4) + stats.row(index_r_light).at<int>(4)) >= stats.row(i).at<int>(4))
-                && (stats.row(i).at<double>(2) / stats.row(i).at<double>(3) > 1)) {
+                && (stats.row(i).at<int>(2) / stats.row(i).at<int>(3)) > 1) {
                 double I_tb = calculate_I_tb(centroids.row(i).at<double>(0), centroids.row(index_l_light).at<double>(0), centroids.row(index_r_light).at<double>(0));
              //   cout << "I_tb" << I_tb << endl;
                 if (I_tb > tao_tb && (I_tb > max_I_tb || index_third_light == -1)) {

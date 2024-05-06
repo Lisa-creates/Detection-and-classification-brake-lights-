@@ -6,9 +6,6 @@
 #include <iostream>  
 
 #include <vector>
-#include <opencv2/opencv.hpp>
-
-
 #include <stdio.h>
 
 #include "brake_lights_detection.cpp" 
@@ -16,12 +13,10 @@
 
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
 #include <filesystem> 
-//namespace fs = std::filesystem;
 #include <experimental/filesystem> 
 
 namespace fs = std::experimental::filesystem;
 
-//std::experimental::filesystemstd::filesystem 
 
 
 
@@ -61,7 +56,7 @@ void img_preprocessing_HSV(Mat& image, vector<Mat>& HSV_channels, const int weig
 }
 
 void drawBoundingRectangles(const cv::Mat image, const cv::Mat stats) {
-    for (int i = 0; i < stats.rows; ++i) {
+    for (int i = 2; i < stats.rows; ++i) {
         cv::rectangle(image, cv::Point(stats.at<int>(i, cv::CC_STAT_LEFT), stats.at<int>(i, cv::CC_STAT_TOP)),
             cv::Point(stats.at<int>(i, cv::CC_STAT_LEFT) + stats.at<int>(i, cv::CC_STAT_WIDTH),
                 stats.at<int>(i, cv::CC_STAT_TOP) + stats.at<int>(i, cv::CC_STAT_HEIGHT)),
@@ -102,35 +97,34 @@ void get_rectangle_for_detector(const Mat channel, cv::Mat& filteredStats, cv::M
     Mat labels, stats, centroids;
     int numLabels = cv::connectedComponentsWithStats(otsu_img, labels, stats, centroids);
 
-    imwrite(std::string("Otsu_img.png").c_str(), otsu_img); 
+   // imwrite(std::string("Otsu_img.png").c_str(), otsu_img);
 
-        /* Mat otsu_img2;
+    /* Mat otsu_img2;
 
-        int thresh2 = 0;
-        int maxValue2 = 255;
+    int thresh2 = 0;
+    int maxValue2 = 255;
 
-        long double thres2 = cv::threshold(channel, otsu_img2, thresh2, maxValue2, THRESH_OTSU); // THRESH_TRIANGLE
+    long double thres2 = cv::threshold(channel, otsu_img2, thresh2, maxValue2, THRESH_OTSU); // THRESH_TRIANGLE
 
-        // cout << "Otsu Threshold: " << thresh << endl;
-        //imshow("Image after Otsu Threshold", otsu_img);
+    // cout << "Otsu Threshold: " << thresh << endl;
+    //imshow("Image after Otsu Threshold", otsu_img);
 
-       Mat labels2, stats2, centroids2;
-        int numLabels2 = cv::connectedComponentsWithStats(otsu_img2, labels2, stats2, centroids2);
+   Mat labels2, stats2, centroids2;
+    int numLabels2 = cv::connectedComponentsWithStats(otsu_img2, labels2, stats2, centroids2);
 
-        stats.push_back(stats2);
-        centroids.push_back(centroids2);
+    stats.push_back(stats2);
+    centroids.push_back(centroids2);
 
-        //  cout << "Befor filtr" << stats << endl; */
+    //  cout << "Befor filtr" << stats << endl; */
 
-    drawBoundingRectangles(resized_img, stats);
-    imwrite(std::string("with_rectangels.png").c_str(), resized_img);
+    // drawBoundingRectangles(resized_img, stats);
+    // imwrite(std::string("with_rectangels.png").c_str(), resized_img);
 
     filterStatsAndCentroids(stats, centroids, filteredStats, filteredCentroids, resized_img);
     //  cout << "After filtr" << filteredStats << endl; 
 
-  //  drawBoundingRectangles(resized_img, filteredStats); 
-
-   // cv::imshow("with rectangels", resized_img);
+ //   drawBoundingRectangles(resized_img, filteredStats);
+ //   imwrite(std::string("with_rectangels.png").c_str(), resized_img);
 }
 
 void get_features_from_dataset(const vector<string>& input_folders_test, int new_weight, int new_height, Mat& data_l, Mat& data_r, Mat& data_third, Mat& labels_test, Mat& labels_test_classifier) {
@@ -145,7 +139,8 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
     int detecting_light_on = 0;
     int detecting_light_HSV = 0;
-    int total = 0;
+    int total = 0; 
+    int detecting_light_off = 0; 
 
     for (const string& folder : input_folders_test) {
         for (const auto& entry : fs::directory_iterator{ folder }) {
@@ -189,27 +184,30 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
             if (lateral_stats.rows >= 2) {
                 classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, img);
-                detecting_light_on++;
+              //  detecting_light_on++;
                 //  imwrite(std::string("LAB\\" + std::to_string(total) + "r.png").c_str(), img);
-             //   drawBoundingRectangles(img, lateral_stats);
-             //   imwrite(std::string("LAB\\" + std::to_string(total) + ".png").c_str(), img);
+                drawBoundingRectangles(img, lateral_stats);
+                imwrite(std::string("LAB\\" + std::to_string(total) + ".png").c_str(), img);
             }
             else if (lateral_stats_HSV.rows >= 2) {
                 classifier_get_features(data_l, data_r, data_third, lateral_stats_HSV, lab_channels, img);
-                detecting_light_HSV++;
-                //    drawBoundingRectangles(img, lateral_stats_HSV);
-                //    imwrite(std::string("RGB\\" + std::to_string(detecting_light_HSV) + ".png").c_str(), img);
+                // detecting_light_HSV++;
+                drawBoundingRectangles(img, lateral_stats_HSV);
+                imwrite(std::string("RGB\\" + std::to_string(detecting_light_HSV) + ".png").c_str(), img);
             }
 
             if (folder.substr(folder.size() - 3) == "OFF") {
                 if (lateral_stats.rows >= 2 || lateral_stats_HSV.rows >= 2) {
                     labels_test_classifier.push_back(0);
+                    detecting_light_off++; 
                 }
-                labels_test.push_back(0);
+                labels_test.push_back(0); 
+                
             }
             else {
                 if (lateral_stats.rows >= 2 || lateral_stats_HSV.rows >= 2) {
-                    labels_test_classifier.push_back(1);
+                    labels_test_classifier.push_back(1); 
+                    detecting_light_on++;
                 }
                 labels_test.push_back(1);
             }
@@ -218,7 +216,7 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
         }
     }
 
-    std::cout << endl << "detecting_light_on " << detecting_light_on << " detecting_light_HSV " << detecting_light_HSV << " total " << total << endl;
+    std::cout << endl << "detecting_light_on " << detecting_light_on + detecting_light_HSV << "detecting_light_off" << detecting_light_off << " total " << total << endl;
 } 
 
 
@@ -229,13 +227,13 @@ int main(int argc, char** argv)
     // Mat image = imread("C:\\testdrive1583149193.4818494.png"); 
    // Mat image = imread("C:\\testdrive1583149150.6489925.png"); // красная 
   //  Mat image = imread("C:\\testdrive1583149169.625285.png"); // красная с включёнными 
-   // Mat image = imread("C:\\testdrive1583149177.9194167.png"); // белая 
+    Mat image = imread("C:\\testdrive1583149191.58733.png"); // белая 
     //  Mat image = imread("C:\\testdrive1580902052.9363065.png");
      // Mat image = imread("C:\\11r.png"); 
 
     // Mat image = imread("C:\\18r.png");
 
-    Mat image = imread("C:\\testdrive1583149188.5726807.png"); 
+  //  Mat image = imread("C:\\testdrive1583149188.5726807.png"); 
     
      //  Mat image = imread("C:\\red_off.png");
 
@@ -259,8 +257,7 @@ int main(int argc, char** argv)
     int detecting_light_HSV = 0;
     int total = 0;
 
-    Mat data_l, data_r, data_third;
-/*
+    Mat data_l, data_r, data_third; 
 
      get_features_from_dataset(input_folders_train, new_weight, new_height, data_l, data_r, data_third, labels_train, labels_train_classifier);
      
@@ -275,13 +272,14 @@ int main(int argc, char** argv)
 
      get_features_from_dataset(input_folders_test, new_weight, new_height, data_l_test, data_r_test, data_third_test, labels_test, labels_test_classifier);
 
-     cout << endl << labels_test_classifier.size() << " data " << data_third_test.size() << endl;
+  //   cout << endl << labels_test_classifier.size() << " data " << data_third_test.size() << endl; 
 
   //   cout << endl << labels_test_classifier;
 
-     SVM_classifier_third_light(data_third, labels_train_classifier, data_third_test, labels_test_classifier);  
+  //   SVM_classifier_third_light(data_third, labels_train_classifier, data_third_test, labels_test_classifier);  
 
-*/
+     SVM_classifier_LR_light(data_l, data_r, labels_train_classifier, data_l_test, data_r_test, labels_test_classifier); 
+
   //  cout << "Hey" << endl;
 
     Mat resized_img = image.clone();
@@ -325,12 +323,13 @@ int main(int argc, char** argv)
 
         }
     */
-    cout << "lateral " << lateral_stats << endl;
+  //  cout << "lateral " << lateral_stats << endl;
 
 
     Mat new_i = image.clone();
-    drawBoundingRectangles(new_i, lateral_stats);
-    cv::imshow("lateral_stats", new_i);
+
+    drawBoundingRectangles(resized_img, lateral_stats);
+    imwrite("third_light.png", resized_img);
 
     //  Mat labels_test_, labels_test_classifier_;
 
@@ -339,16 +338,6 @@ int main(int argc, char** argv)
     //  labels_test_classifier_ = { 1, 0 }; 
 
     //  cout << "data_l = " << data_l << "labels_test_classifier = " << labels_test_classifier_ << endl; 
-
-    double data_l_array[2][10] = {
-        {1.118070556538741e-320, 80, 21.0377358490566, 137, 128, 0, 75.33962264150944, 144.622641509434, 105.4005350869083, 111.7473765717456},
-        {1.143761970122486e-320, 65, 52.83400809716599, 134, 129, 0, 97.87854251012146, 169.0465587044534, 105.4005350869083, 111.7473765717456}
-    };
-
-    int labels_test_classifier_array[2] = { 1, 0 };
-
-    Mat data_l_(2, 10, CV_64F, data_l_array);
-    Mat labels_test_classifier_(2, 1, CV_32S, labels_test_classifier_array);
 
     //SVM_classifier_third_light(data_l_, labels_test_classifier_);
 
@@ -362,7 +351,6 @@ int main(int argc, char** argv)
      }
      */
 
-    cout << data_l;
     // Wait for any keystroke in the window
     waitKey(0);
     return 0;
