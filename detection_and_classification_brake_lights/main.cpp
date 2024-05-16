@@ -9,7 +9,9 @@
 #include <stdio.h>
 
 #include "brake_lights_detection.cpp" 
-#include "brake_lights_classification.cpp"
+#include "brake_lights_classification.cpp" 
+// #include "video_processing.cpp" 
+//#include "Source1.cpp"
 
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
 #include <filesystem> 
@@ -139,8 +141,10 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
     int detecting_light_on = 0;
     int detecting_light_HSV = 0;
-    int total = 0; 
-    int detecting_light_off = 0; 
+    int total = 0;
+    int detecting_light_off = 0;
+
+    vector<string> img_name; 
 
     for (const string& folder : input_folders_test) {
         for (const auto& entry : fs::directory_iterator{ folder }) {
@@ -184,8 +188,8 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
             if (lateral_stats.rows >= 2) {
                 classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, img);
-              //  detecting_light_on++;
-                //  imwrite(std::string("LAB\\" + std::to_string(total) + "r.png").c_str(), img);
+                //  detecting_light_on++;
+                  //  imwrite(std::string("LAB\\" + std::to_string(total) + "r.png").c_str(), img);
                 drawBoundingRectangles(img, lateral_stats);
                 imwrite(std::string("LAB\\" + std::to_string(total) + ".png").c_str(), img);
             }
@@ -199,15 +203,17 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
             if (folder.substr(folder.size() - 3) == "OFF") {
                 if (lateral_stats.rows >= 2 || lateral_stats_HSV.rows >= 2) {
                     labels_test_classifier.push_back(0);
-                    detecting_light_off++; 
+                    detecting_light_off ++ ; 
+                    img_name.push_back(image_path);
                 }
-                labels_test.push_back(0); 
-                
+                labels_test.push_back(0);
+
             }
             else {
                 if (lateral_stats.rows >= 2 || lateral_stats_HSV.rows >= 2) {
-                    labels_test_classifier.push_back(1); 
+                    labels_test_classifier.push_back(1);
                     detecting_light_on++;
+                    img_name.push_back(image_path);
                 }
                 labels_test.push_back(1);
             }
@@ -216,10 +222,10 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
         }
     }
 
+    cout << img_name[0]; 
+
     std::cout << endl << "detecting_light_on " << detecting_light_on + detecting_light_HSV << "detecting_light_off" << detecting_light_off << " total " << total << endl;
-} 
-
-
+}
 
 int main(int argc, char** argv)
 {
@@ -230,12 +236,11 @@ int main(int argc, char** argv)
     Mat image = imread("C:\\testdrive1583149191.58733.png"); // белая 
     //  Mat image = imread("C:\\testdrive1580902052.9363065.png");
      // Mat image = imread("C:\\11r.png"); 
-
     // Mat image = imread("C:\\18r.png");
-
   //  Mat image = imread("C:\\testdrive1583149188.5726807.png"); 
-    
-     //  Mat image = imread("C:\\red_off.png");
+     //  Mat image = imread("C:\\red_off.png"); 
+
+  //  get_video(); 
 
     if (image.empty())
     {
@@ -247,7 +252,8 @@ int main(int argc, char** argv)
     int new_weight = 416;
     int new_height = 416;
 
-    vector<string> input_folders_train = { "TRAIN/brake_TRAIN_OFF", "TRAIN/brake_ON_TRAIN" };
+    vector<string> input_folders_train = { "TRAIN/brake_TRAIN_LR_OFF", "TRAIN/brake_ON_TRAIN" };
+    vector<string> input_folders_test = { "TEST/brake_TEST_LR_OFF", "TEST/brake_ON_TEST" }; 
     
     vector<vector<int>> features_test;
     Mat labels_train; 
@@ -255,15 +261,22 @@ int main(int argc, char** argv)
 
     int detecting_light_on = 0;
     int detecting_light_HSV = 0;
-    int total = 0;
+    int total = 0; 
 
+    string xmlPath = "dataset_rect/annotations.xml"; 
+   /* vector<Rect> rectangles = parseXmlFile(xmlPath);
+
+    for (auto& rect : rectangles) {
+        cout << "Rect: (" << rect << endl;
+    }
+*/
     Mat data_l, data_r, data_third; 
 
      get_features_from_dataset(input_folders_train, new_weight, new_height, data_l, data_r, data_third, labels_train, labels_train_classifier);
      
      cout << endl << labels_train_classifier.size() << " data " << data_third.size() << endl;
 
-     vector<string> input_folders_test = { "TEST/brake_TEST_OFF", "TEST/brake_ON_TEST" }; 
+     
 
      Mat labels_test; 
      Mat labels_test_classifier; 
@@ -274,11 +287,18 @@ int main(int argc, char** argv)
 
   //   cout << endl << labels_test_classifier.size() << " data " << data_third_test.size() << endl; 
 
-  //   cout << endl << labels_test_classifier;
+  //   cout << endl << labels_test_classifier; 
 
-  //   SVM_classifier_third_light(data_third, labels_train_classifier, data_third_test, labels_test_classifier);  
+     Mat predict_th, predict_LR; 
+     Mat predict_th_train, predict_LR_train; 
 
-     SVM_classifier_LR_light(data_l, data_r, labels_train_classifier, data_l_test, data_r_test, labels_test_classifier); 
+     SVM_classifier_third_light(data_third, labels_train_classifier, data_third_test, labels_test_classifier, predict_th, predict_th_train);
+
+     SVM_classifier_LR_light2(data_l, data_r, labels_train_classifier, data_l_test, data_r_test, labels_test_classifier, predict_LR, predict_LR_train);
+
+     main_classifier(predict_LR_train, predict_th_train, labels_train_classifier);
+
+     main_classifier(predict_LR, predict_th, labels_test_classifier);
 
   //  cout << "Hey" << endl;
 
