@@ -96,7 +96,7 @@ void classifier_get_features(Mat& data_l, Mat& data_r, Mat& data_third, Mat& sta
 
 
 
-void print_metrics(Mat testLabels, Mat predictedLabels) {
+void print_metrics(Mat testLabels, Mat predictedLabels, const char* type_sample) {
     Mat confusionMatrix = Mat::zeros(2, 2, CV_32S); 
     for (int i = 0; i < testLabels.rows; ++i) {
         int trueLabel = testLabels.at<int>(i, 0);
@@ -104,13 +104,13 @@ void print_metrics(Mat testLabels, Mat predictedLabels) {
         confusionMatrix.at<int>(trueLabel, predictedLabel)++;
     }
 
-    cout << confusionMatrix << endl; 
+    cout << type_sample << endl; 
 
     for (int i = 0; i < confusionMatrix.rows; ++i) {
         int truePositives = confusionMatrix.at<int>(i, i);
         int falsePositives = 0;
         int falseNegatives = 0;
-        for (int j = 0; j < confusionMatrix.cols; ++j) {
+        for (int j = 0; j < confusionMatrix.cols; ++j) { 
             if (j != i) {
                 falseNegatives += confusionMatrix.at<int>(i, j);
                 falsePositives += confusionMatrix.at<int>(j, i);
@@ -118,7 +118,8 @@ void print_metrics(Mat testLabels, Mat predictedLabels) {
         }
         double precision = truePositives / static_cast<double>(truePositives + falsePositives);
         double recall = truePositives / static_cast<double>(truePositives + falseNegatives);
-        cout << "Class " << i << " - Precision: " << precision << ", Recall: " << recall << endl; 
+        double F1 = 2 * ((precision * recall) / (precision + recall)); 
+        cout << "Class " << i << " - Precision: " << precision << ", Recall: " << recall << ", F1: " << F1 << endl;
     } 
 
     int truePositives = confusionMatrix.at<int>(1, 1);
@@ -133,7 +134,7 @@ void print_metrics(Mat testLabels, Mat predictedLabels) {
 
 
 
-void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l_test, Mat data_r_test, Mat testLabels) {
+void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l_test, Mat data_r_test, Mat testLabels, Mat& predictedLabels, Mat& predictedLabels_train) {
 
     // cout << data_third;
 
@@ -150,6 +151,12 @@ void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l
                 dataMat.row(i).at<float>(j) = data_r.row(i - data_r.rows).at<float>(j);
         }
     }
+    for (int i = 0; i < trainLabelsMat.rows; ++i) {
+        if (i < trainLabels.rows)
+            trainLabelsMat.at<int>(i, 0) = trainLabels.at<int>(i, 0);
+        else
+            trainLabelsMat.at<int>(i, 0) = trainLabels.at<int>(i - trainLabels.rows, 0);
+    }
 */
     Mat dataMat; 
     cv::vconcat(data_l, data_r, dataMat); // первый массив записывается после 2 
@@ -157,23 +164,21 @@ void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l
     cout << "data_l.rows " << data_l.rows << " dataMat.rows " << dataMat.rows << endl;
 
 
+
     Mat trainLabelsMat(trainLabels.rows * 2, trainLabels.cols, CV_32S);
-    for (int i = 0; i < trainLabelsMat.rows; ++i) {
+ /*   for (int i = 0; i < trainLabelsMat.rows; ++i) {
         if (i < trainLabels.rows)
             trainLabelsMat.at<int>(i, 0) = trainLabels.at<int>(i, 0);
         else
             trainLabelsMat.at<int>(i, 0) = trainLabels.at<int>(i - trainLabels.rows, 0);
-    }
+    }*/ 
+
+    cv::vconcat(trainLabels, trainLabels, trainLabelsMat); 
+    
 
     Mat dataMat_test(data_l_test.rows + data_r_test.rows, data_l_test.cols, CV_32F);
-    for (int i = 0; i < dataMat_test.rows; ++i) {
-        for (int j = 0; j < dataMat_test.cols; ++j) {
-            if (i < data_l_test.rows)
-                dataMat_test.row(i).at<float>(j) = data_l_test.row(i).at<float>(j);
-            else
-                dataMat_test.row(i).at<float>(j) = data_r_test.row(i - data_l_test.rows).at<float>(j);
-        }
-    }
+    
+    cv::vconcat(data_l_test, data_r_test, dataMat_test);
 
     // cout << dataMat_test << endl;
 
@@ -192,19 +197,72 @@ void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l
 
     svm->trainAuto(td);
 
+    svm->predict(dataMat, predictedLabels_train);
+
+ 
+    print_metrics(trainLabelsMat, predictedLabels_train, "train");
 
 
     // Save trained model
     svm->save("digits_svm_model.yml");
 
-    Mat predictedLabels;
+  //  Mat predictedLabels;
     svm->predict(dataMat_test, predictedLabels);
 
-    print_metrics(testLabels, predictedLabels);
+    print_metrics(testLabels, predictedLabels, "test");
 } 
 
 
-void SVM_classifier_third_light(Mat data_third, Mat trainLabels, Mat data_third_test, Mat testLabels) {
+void SVM_classifier_LR_light2(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l_test, Mat data_r_test, Mat testLabels, Mat& predictedLabels, Mat& predictedLabels_train) {
+
+    Mat dataMat;
+    cv::hconcat(data_l, data_r, dataMat); // первый массив записывается после 2 
+
+    cout << "data_l.rows " << data_l.rows << " dataMat.rows " << dataMat.rows << endl;
+
+    Mat trainLabelsMat(trainLabels.rows, trainLabels.cols, CV_32S);
+
+    trainLabelsMat = trainLabels; 
+
+    Mat dataMat_test(data_l_test.rows, data_l_test.cols * 2, CV_32F);
+
+    cv::hconcat(data_l_test, data_r_test, dataMat_test);
+
+    cout << "dataMat_test" << endl;
+
+
+     // Set up SVM for OpenCV 3
+    Ptr<SVM> svm = SVM::create();
+    // Set SVM type
+    svm->setType(SVM::C_SVC);
+    // Set SVM Kernel to Radial Basis Function (RBF)
+    svm->setKernel(SVM::RBF);
+    // Set parameter C 
+
+
+    // Train SVM on training data
+    Ptr<TrainData> td = TrainData::create(dataMat, ROW_SAMPLE, trainLabelsMat);
+
+    svm->trainAuto(td);
+
+    svm->predict(dataMat, predictedLabels_train);
+
+
+
+    print_metrics(trainLabelsMat, predictedLabels_train, "train");
+
+
+    // Save trained model
+    svm->save("digits_svm_model.yml");
+
+    //  Mat predictedLabels;
+    svm->predict(dataMat_test, predictedLabels);
+
+    print_metrics(testLabels, predictedLabels, "test");
+}
+
+
+void SVM_classifier_third_light(Mat data_third, Mat trainLabels, Mat data_third_test, Mat testLabels, Mat& predictedLabels, Mat& predictedLabels_train) {
 
     // cout << data_third;
 
@@ -250,13 +308,45 @@ void SVM_classifier_third_light(Mat data_third, Mat trainLabels, Mat data_third_
 
     svm->trainAuto(td);
 
+    svm->predict(data_third, predictedLabels_train); 
+
+    print_metrics(trainLabels, predictedLabels_train, "train th");
+
     // Save trained model
     svm->save("digits_svm_model.yml");
 
 
     // Predict on training data
-    Mat predictedLabels;
+  //  Mat predictedLabels;
     svm->predict(data_third_test, predictedLabels);
 
-    print_metrics(testLabels, predictedLabels);
+    print_metrics(testLabels, predictedLabels, "test th");
 } 
+
+
+void main_classifier(Mat predict_LR, Mat predict_third, Mat labels) {
+
+    Mat predict(labels.rows, labels.cols, CV_32S);
+
+    for (int i = 0; i < labels.rows; ++i) { // + predict_LR.at<int>(i + labels.rows, 0) 
+        if (predict_LR.rows > labels.rows) {
+         //   cout << i << " " << predict_LR.at<float>(i) + predict_third.at<float>(i) + predict_LR.at<float>(i + labels.rows) << endl;
+            if (predict_LR.at<float>(i) + predict_third.at<float>(i) + predict_LR.at<float>(i + labels.rows) >= 3)
+                predict.at<float>(i) = 1;
+            else
+                predict.at<float>(i) = 0;
+        } 
+        else {
+         ///   cout << i << " " << predict_LR.at<float>(i) + predict_third.at<float>(i) + predict_LR.at<float>(i + labels.rows) << endl;
+            if (predict_LR.at<float>(i) + predict_third.at<float>(i) >= 2)
+                predict.at<float>(i) = 1;
+            else
+                predict.at<float>(i) = 0;
+        }
+    }
+
+  // cout << "res " << predict;
+
+   print_metrics(labels, predict, "test all");
+} 
+
