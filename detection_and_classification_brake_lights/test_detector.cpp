@@ -7,6 +7,7 @@
 #include <filesystem> 
 #include <experimental/filesystem> 
 #include <regex> 
+#include "brake_lights_detecthion.h" 
 
 namespace fs = std::experimental::filesystem;
 
@@ -29,7 +30,7 @@ void img_preprocessing_(Mat& image, vector<Mat>& lab_channels, const int weight,
     split(Lab_image, lab_channels);
 }
 
-void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, double lambda_D, double lambda_U, vector<string> input_folders, int tao_v, float tao_S, float tao_tb) {
+void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, double lambda_D, double lambda_U, const vector<string>&  input_folders, int tao_v, float tao_S, float tao_tb) {
 
     // Итерация по файлам 
     for (const string& folder : input_folders) {
@@ -44,53 +45,50 @@ void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, 
 
             vector<Rect> rectangles, rectangels_th;
 
-            std::ifstream file(full_path);
-            std::string line;
-            float  x_th, y_th, x2_th, y2_th;
-            string label3;
+            ifstream file(full_path);
+            string line, label_th;
+            float  x_th, y_th, x2_th, y2_th; 
 
-            while (std::getline(file, line)) {
-                std::istringstream iss(line);
-                std::string label, label2;
+            while (getline(file, line)) {
+                istringstream iss(line);
+                string label, label2;
                 float x, y, x2, y2, n, n1, n2;
                 iss >> label;
                 //  cout << label; 
 
-                cv::Rect rect_th();
-
                 if (label == "BRAKE")
                 {
                     iss >> label2 >> n >> n1 >> n2 >> x >> y >> x2 >> y2;
-                    cv::Rect rect(x, y, x2 - x, y2 - y);
+                    Rect rect(x, y, x2 - x, y2 - y); 
                     rectangles.push_back(rect);
                 }
                 else
                 {
-                    iss >> label2 >> label3 >> n >> n1 >> n2 >> x_th >> y_th >> x2_th >> y2_th;;
+                    iss >> label2 >> label_th >> n >> n1 >> n2 >> x_th >> y_th >> x2_th >> y2_th;;
                 }
 
             }
 
-            if (label3.size() > 0)
+            if (label_th.size() > 0)
             {
-                Rect rect(x_th, y_th, x2_th - x_th, y2_th - y_th);
-                rectangles.push_back(rect);
+                Rect rect_third(x_th, y_th, x2_th - x_th, y2_th - y_th);
+                rectangles.push_back(rect_third);
             }
 
             Mat image = imread(std::string("default/image_2/" + num + ".png").c_str());
             
-            int new_weight = 416;
-            int  new_height = 416; 
-
+            const int new_weight = 416;
+            const int  new_height = 416; 
+            const int A = 1; 
 
             vector<Mat> lab_channels(3); 
 
             Mat orig_img = image.clone();
 
-            img_preprocessing_(image, lab_channels, 416, 416);
+            img_preprocessing_(image, lab_channels, new_weight, new_height);
 
-            const int a = 1; 
-            Mat lateral_stats = detector_new(new_weight / 2, lab_channels, image, orig_img, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb, a);
+            
+            Mat lateral_stats = detector(lab_channels, image, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb); 
 
             vector<Rect> rectangles_from_detector;
 
@@ -101,7 +99,7 @@ void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, 
             }
 
             for (const auto& rect : rectangles_from_detector) {
-                // std::cout << "Rect: (" << rect.x << ", " << rect.y << ", " << rect.width << ", " << rect.height << ")\n";
+                // std::cout << "Rect: (" << rect_third.x << ", " << rect_third.y << ", " << rect_third.width << ", " << rect_third.height << ")\n";
                 cv::rectangle(image, rect, cv::Scalar(0, 0, 200), 3);
             }
 
@@ -111,7 +109,7 @@ void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, 
 
             if (rectangles[0].x > rectangles[1].x) {
                 Rect tmp = rectangles[0];
-                rectangles[0] = rectangles[1];
+                rectangles[0] = rectangles[1]; // !!!
                 rectangles[1] = tmp;
             }
 
@@ -137,7 +135,7 @@ void test_detector(float& IoU, int& total_zero, int& positive, double lambda_S, 
 
 
 
-vector <double> choice_lambda(vector<string>input_folders, int tao_v, float tao_S, float tao_tb) {
+vector <double> choice_lambda(const vector<string> input_folders, int tao_v, float tao_S, float tao_tb) {
     float maxIoU = 0;
     int total_zero_m = 0;
     int positive_m = 0;
@@ -186,7 +184,7 @@ vector <double> choice_lambda(vector<string>input_folders, int tao_v, float tao_
 
 
 
-vector <double> choice_tao(vector<string>input_folders, double lambda_S, double lambda_D, double lambda_U) {
+vector <double> choice_tao(const vector<string>& input_folders, double lambda_S, double lambda_D, double lambda_U) {
     float maxIoU = 0;
     int total_zero_m = 0;
     int positive_m = 0;
@@ -275,7 +273,7 @@ vector <double> choice_tao(vector<string>input_folders, double lambda_S, double 
 }
 
 
-void ppp() {
+void get_test_for_detector() {
     vector<Rect> rectangles;
 
     // Чтение данных из нескольких файлов txt
