@@ -107,7 +107,8 @@ void print_metrics(Mat testLabels, Mat predictedLabels, const char* type_sample)
     cout << type_sample << endl; 
 
     for (int i = 0; i < confusionMatrix.rows; ++i) {
-        int truePositives = confusionMatrix.at<int>(i, i);
+        int truePositives = confusionMatrix.at<int>(i, i); 
+        int trueNegatives = confusionMatrix.at<int>(i, i);
         int falsePositives = 0;
         int falseNegatives = 0;
         for (int j = 0; j < confusionMatrix.cols; ++j) { 
@@ -119,7 +120,8 @@ void print_metrics(Mat testLabels, Mat predictedLabels, const char* type_sample)
         double precision = truePositives / static_cast<double>(truePositives + falsePositives);
         double recall = truePositives / static_cast<double>(truePositives + falseNegatives);
         double F1 = 2 * ((precision * recall) / (precision + recall)); 
-        cout << "Class " << i << " - Precision: " << precision << ", Recall: " << recall << ", F1: " << F1 << endl;
+        double accuracy = (truePositives + trueNegatives) / static_cast<double>(truePositives + falseNegatives + trueNegatives + falsePositives); 
+        cout << "Class " << i << " - Accuracy: " << accuracy << ", Precision: " << precision << ", Recall: " << recall << ", F1: " << F1 << endl;
     } 
 
     int truePositives = confusionMatrix.at<int>(1, 1);
@@ -195,7 +197,9 @@ void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l
     // Train SVM on training data
     Ptr<TrainData> td = TrainData::create(dataMat, ROW_SAMPLE, trainLabelsMat);
 
-    svm->trainAuto(td);
+    int kFold = 5;
+
+    svm->trainAuto(td, kFold);
 
     svm->predict(dataMat, predictedLabels_train);
 
@@ -204,12 +208,13 @@ void SVM_classifier_LR_light(Mat data_l, Mat data_r, Mat trainLabels, Mat data_l
 
 
     // Save trained model
-    svm->save("digits_svm_model.yml");
+    svm->save("svm_model_lateral.yml");
 
   //  Mat predictedLabels;
     svm->predict(dataMat_test, predictedLabels);
 
-    print_metrics(testLabels, predictedLabels, "test");
+    print_metrics(testLabels, predictedLabels, "test"); 
+
 } 
 
 
@@ -253,7 +258,7 @@ void SVM_classifier_LR_light2(Mat data_l, Mat data_r, Mat trainLabels, Mat data_
 
 
     // Save trained model
-    svm->save("digits_svm_model.yml");
+    svm->save("svm_model_lateral.yml");
 
     //  Mat predictedLabels;
     svm->predict(dataMat_test, predictedLabels);
@@ -306,14 +311,14 @@ void SVM_classifier_third_light(Mat data_third, Mat trainLabels, Mat data_third_
     // Train SVM on training data
     Ptr<TrainData> td = TrainData::create(data_third, ROW_SAMPLE, trainLabels);
 
-    svm->trainAuto(td);
+    svm->trainAuto(td); 
 
     svm->predict(data_third, predictedLabels_train); 
 
     print_metrics(trainLabels, predictedLabels_train, "train th");
 
     // Save trained model
-    svm->save("digits_svm_model.yml");
+    svm->save("svm_model_third.yml");
 
 
     // Predict on training data
