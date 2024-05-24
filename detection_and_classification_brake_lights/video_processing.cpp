@@ -11,7 +11,7 @@
 #include <experimental/filesystem> 
 #include <regex> 
 
-// #include "brake_lights_classification.cpp" 
+#include "brake_lights_detecthion.h" 
 
 namespace fs = std::experimental::filesystem; 
 
@@ -33,11 +33,11 @@ void img_preprocessing2(Mat& image, vector<Mat>& lab_channels, const int weight,
 
 int get_video() {
 
-    //VideoCapture cap("videoplayback.mp4");
-    //vector<string> input_folders = { "default_video/label_2" };
+    VideoCapture cap("videoplayback.mp4");
+    vector<string> input_folders = { "default_video/label_2" };
 
-    VideoCapture cap("car_black.mp4");
-    vector<string> input_folders = { "default_car_black/label_2" };
+   // VideoCapture cap("car_black.mp4");
+   // vector<string> input_folders = { "default_car_black/label_2" };
 
     if (!cap.isOpened()) {
         cout << "Error opening video stream or file" << endl;
@@ -98,7 +98,7 @@ int get_video() {
             float tao_S = 0.45;
             int tao_v = 32;
 
-            Mat lateral_stats = detector_new(new_weight / 2, lab_channels, img_ROI, orig_ROI, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb, 1);
+            Mat lateral_stats = detector(lab_channels, img_ROI, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb);
             Mat frame_out = frame.clone();
 
             // double thresh = cv::threshold(lab_channels[1], img_ROI, 0, 255, THRESH_TRIANGLE);
