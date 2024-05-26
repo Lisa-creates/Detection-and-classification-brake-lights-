@@ -1,30 +1,63 @@
-#include <opencv2/opencv.hpp> 
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>  
-#include <vector> 
-
-#include <stdio.h>
-
-#include "brake_lights_detecthion.h"
-
-using namespace cv;
-using namespace std; 
-
-
-const int TAO_V = 60;
-const float TAO_S = 0.3;
-const float TAO_TB = 0.7;
-const double LAMBDA_S = 0.3;
-const double LAMBDA_D = 0.4;
-
+#include "Header_files/brake_lights_detection.h"
 
 int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v); 
 void rect_in_center(Rect& rect2, const Mat& centroids_i, const Mat& centroids_j);
 double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const Mat& centroids_i, const Mat& centroids_j); 
 double calculate_I_D(int area_i, int area_j, float total_sum);  
+
+/**
+ * \brief Finds lateral brake lights (left and right)
+ *
+ * \param half_img_weight Half of the image weight
+ * \param stats Candidates for brake lights 
+ * \param centroids Coordinates of the centers of candidate rectangles 
+ * \param lambda_S Weight for I_S
+ * \param lambda_D Weight for I_D
+ * \param lambda_U Weight for I_U
+ * \param tao_v Threshold 
+ * \param tao_S Threshold 
+ *
+ * \return Vector with indices of found lateral brake lights, {0, 0}, if not found 
+ */
+vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, const Mat& centroids, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S); 
+
+/**
+ * \brief Finds third brake light
+ *
+ * \param stats Candidates for brake lights 
+ * \param centroids  Coordinates of the centers of candidate rectangles 
+ * \param vector_max Indices of found lateral brake lights
+ * \param tao_tb Threshold for third brake light
+ *
+ * \return Index of found third brake light, -1 if not found
+ */
+int find_third_brake_light(const Mat& stats, const Mat& centroids, const vector<int>& vector_max, float tao_tb); 
+
+/**
+ * \brief Filters out rectangles that are not potential brake lights
+ *
+ * \param stats Candidates for brake lights 
+ * \param centroids Coordinates of the centers of candidate rectangles 
+ * \param filteredStats Filtered candidates for brake lights 
+ * \param filteredCentroids Filtered coordinates of the centers of candidate rectangles 
+ * \param resizedImage Resized image
+ */
+void filter_rectangels(const Mat& stats, const Mat& centroids, Mat& filteredStats, Mat& filteredCentroids, const Mat& resizedImage); 
+
+/**
+ * \brief Finds the brake light in an image
+ *
+* \param img The image.
+* \param lambda_S The lambda value for the S channel.
+* \param lambda_D The lambda value for the D channel.
+* \param lambda_U The lambda value for the U channel.
+* \param tao_v The threshold for the V channel.
+* \param tao_S The threshold for the S channel.
+* \param tao_tb The threshold for the third brake light.
+ *
+ * \return A Mat containing the brake light
+ */
+Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S, float tao_tb); 
 
 
 int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v) { 
@@ -171,16 +204,10 @@ double calculate_I_tb(double u_k, double u_l, double u_r) {
 
 
 
-vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, const Mat& centroids, double lambda_S, double lambda_D, double lambda_U, int tao_v, float tao_S) {
+vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, const Mat& centroids, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S) {
 
     double max_ij = -1.0;
-    /*int tao_v = 60;
-    float tao_S = 0.3;
-    float tao_tb = 0.7;
-    double lambda_S = 0.3;
-    double lambda_D = 0.4;
-    double lambda_U = 1 - lambda_S - lambda_D;
-*/
+
     vector<int> vector_max = { 0, 0 };
 
     float img_height = half_img_weight * 2;
@@ -258,36 +285,15 @@ void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filt
     Mat bin_img;
     Mat bl;
     int maxValue = 255;
-    double thresh = cv::threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); //  THRESH_OTSU
+    double thresh = threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); //  THRESH_OTSU
 
     // cout << "Otsu Threshold: " << thresh << endl;
    // imshow("Image after Otsu Threshold", bin_img);
 
     Mat labels, stats, centroids;
-    int numLabels = cv::connectedComponentsWithStats(bin_img, labels, stats, centroids);
+    int numLabels = connectedComponentsWithStats(bin_img, labels, stats, centroids);
 
     // imwrite(std::string("Otsu_img.png").c_str(), bin_img);
-
-     /* Mat otsu_img2;
-
-     int thresh2 = 0;
-     int maxValue2 = 255;
-
-     long double thres2 = cv::threshold(channel, otsu_img2, thresh2, maxValue2, THRESH_OTSU); // THRESH_TRIANGLE
-
-     // cout << "Otsu Threshold: " << thresh << endl;
-     //imshow("Image after Otsu Threshold", bin_img);
-
-    Mat labels2, stats2, centroids2;
-     int numLabels2 = cv::connectedComponentsWithStats(otsu_img2, labels2, stats2, centroids2);
-
-     stats.push_back(stats2);
-     centroids.push_back(centroids2);
-
-     //  cout << "Befor filtr" << stats << endl; */
-
-     // drawBoundingRectangles(resized_img, stats);
-     // imwrite(std::string("with_rectangels.png").c_str(), resized_img);
 
     filter_rectangels(stats, centroids, filteredStats, filteredCentroids, resized_img);
     //  cout << "After filtr" << filteredStats << endl; 
@@ -330,18 +336,10 @@ void img_preprocessing_HSV(Mat& image, vector<Mat>& HSV_channels) {
 Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S, float tao_tb) {
 
     double max_ij = -1.0;
-    /*int tao_v = 60;
-    float tao_S = 0.3;
-    float tao_tb = 0.7;
-    double lambda_S = 0.3;
-    double lambda_D = 0.4;
-    double lambda_U = 1 - lambda_S - lambda_D;
-*/
-// vector<int> vector_max = { 0, 0 };
 
-   const int A_CHANNEL = 1; 
-   const int img_height = img.rows;
-   const float half_img_weight = img_height / 2;
+    const int A_CHANNEL = 1;
+    const int img_height = img.rows;
+    const float half_img_weight = img_height / 2;
 
     Mat stats, centroids;
 
@@ -360,7 +358,7 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
         brake_light = get_brake_light(stats, vector_max, index_third_light);
     }
 
-    if (brake_light.rows < 3) {
+   if (brake_light.rows < 3) {
 
         vector<Mat> HSV_channels(3);
 
@@ -378,8 +376,7 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
             brake_light = get_brake_light(stats, vector_max, index_third_light);
 
         }
-    }
+    }  
 
-    return brake_light;
-} 
-
+    return brake_light; 
+}
