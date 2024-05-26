@@ -1,59 +1,74 @@
 #include"Header_files/brake_lights_classification.h"
 
-/**
- * \brief Рассчитывает фичи для прямоугольной области изображения 
- *
- * \param current_rectangle Прямоугольная область изображения
- * \param lab_channels Вектор каналов LAB цветового пространства
- * \param tao_L Порог для канала L
- * \param tao_A Порог для канала a
- * \param Lab_image Изображение в цветовом пространстве LaB 
- *
- * \return Матрица с рассчитанными характеристиками.
- */
-Mat calculate_features(const Mat& current_rectangle, const vector<Mat>& lab_channels, const double tao_L, const double tao_A, const Mat& Lab_image);
+/*
+*\brief Computes features for a rectangular image area
+*
+* \param current_rectangle Rectangular image area
+* \param lab_channels Vector of LAB color space channels
+* \param tao_L Threshold for L channel
+* \param tao_A Threshold for a channel
+* \param Lab_image Image in LaB color space
+*
+* \return Matrix with computed features.
+*/
+Mat calculate_features(const Mat & current_rectangle, const vector<Mat>&lab_channels, const double tao_L, const double tao_A, const Mat & Lab_image);
 
- /**
-  * \brief Заполняет входные матрицы data_l, data_r и data_third фичами для левой, правой и третьей фары соответственно,
-  * полученными фичами из calculate_features 
-  * 
-  * \param data_l Матрица данных для левого стоп-сигнала
-  * \param data_r Матрица данных для правого стоп-сигнала
-  * \param data_third Матрица данных для третьего стоп-сигнала(если есть, если нет, заполняется фичами левого стоп-сигнала) 
-  * \param stats Координаты прямоугольников левого, правого и третьего стоп-сигнала
-  * \param channels Вектор каналов изображения
-  * \param img Изображение 
-  */
-void classifier_get_features(Mat& data_l, Mat& data_r, Mat& data_third, const Mat& stats, const vector<Mat> channels, Mat& img); 
+/*
+*\brief Fills input matrices data_l, data_r and data_third with features for left, right and third light respectively,
+* obtained features from calculate_features
+*
+* \param data_l Data matrix for left brake light
+* \param data_r Data matrix for right brake light
+* \param data_third Data matrix for third brake light(if it exists, if not, filled by left brake light features)
+* \param stats Coordinates of left, right and third brake light rect
+* \param channels Vector of image channels
+* \param img Image
+*/
+void classifier_get_features(Mat & data_l, Mat & data_r, Mat & data_third, const Mat & stats, const vector<Mat> channels, Mat & img);
 
- /**
-  * \brief Выводит метрики (accuracy, recall, precision F2-меру) на основе предсказанных и истинных меток классов.
-  *
-  * \param testLabels Метки классов для тестирования.
-  * \param predictedLabels Предсказанные метки классов.
-  * \param type_sample Тип выборки (например, "тестовая для третьего сьоп-сигнала" или "обучающая для боковых стоп-сигналов").
-  */
-void print_metrics(const Mat& testLabels, const Mat& predictedLabels, const char* type_sample); 
+/*
+*\brief Prints metrics(accuracy, recall, precision F2 - measure) based on predicted and true class labels.
+*
+*\param testLabels Class labels for testing.
+* \param predictedLabels Predicted class labels.
+* \param type_sample Sample type(e.g. "test for third light" or "train for side lights").
+*/
+void print_metrics(const Mat & testLabels, const Mat & predictedLabels, const char* type_sample);
 
-/**
- * \brief Обучает модель SVM на данных data_third для третьего стоп-сигнала 
- *
- * \param data_third Матрица данных (для третьего стоп-сигнала) для обучения модели SVM.
- * \param data_third_test Матрица данных для тестирования.
- * \param trainLabels Метки классов для обучения модели.
- * \param testLabels Метки классов для тестирования модели.
- */
-void SVM_classifier_third_light(const Mat& data_third, const Mat& trainLabels, const Mat& data_third_test, const Mat& testLabels, Mat& predictedLabels, Mat& predictedLabels_train); 
+/*
+*\brief Trains and tests SVM classifier for left and right light
+*
+* \param data_l Data matrix for left stop light
+* \param data_r Data matrix for right stop light
+* \param trainLabels Class labels for training sample.
+* \param data_l_test Data matrix for testing left stop light
+* \param data_r_test Data matrix for testing right stop light
+* \param testLabels Class labels for testing sample
+* \param predictedLabels Array for saving predicted labels on test sample.
+* \param predictedLabels_train Array for saving predicted labels on train sample.
+*/
+void SVM_classifier_LR_light(const Mat & data_l, const Mat & data_r, const Mat & trainLabels, const Mat & data_l_test, const Mat & data_r_test, const Mat & testLabels, Mat & predictedLabels, Mat & predictedLabels_train);
+
+/*
+*\brief Trains SVM model on data_third for third light
+*
+* \param data_third Data matrix(for third light) for training SVM model.
+* \param data_third_test Data matrix for testing.
+* \param trainLabels Class labels for training model.
+* \param testLabels Class labels for testing model.
+*/
+void SVM_classifier_third_light(const Mat & data_third, const Mat & trainLabels, const Mat & data_third_test, const Mat & testLabels, Mat & predictedLabels, Mat & predictedLabels_train);
 
 
-/**
- * \brief Основная функция классификации, объединяющая результаты двух предсказаний и вычисляющая окончательное предсказание.
- *
- * \param predict_LR Результаты предсказания для боковых фар
- * \param predict_third Результаты предсказания третьей фары
- * \param labels Метки классов для сравнения предсказаний 
- */
-void main_classifier(const Mat& predict_LR, const Mat& predict_third, const Mat& labels);
+/*
+*\brief Main classification function, which combines results of two predictions, and makes the final prediction.
+*
+* \param predict_LR Prediction results for lateral lights
+* \param predict_third Prediction results for third light
+* \param labels Class labels for comparison of predictions
+*/
+void main_classifier(const Mat & predict_LR, const Mat & predict_third, const Mat & labels);
+
 
 
 void calculate_features_without_mean(const Mat& imagePart, double threshold,
