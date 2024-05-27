@@ -140,7 +140,12 @@ int main(int argc, char** argv)
 
         return 0; 
     }
-    
+    else if (action == 3) {
+        get_test_for_detector();
+        waitKey(0);
+
+        return 0; 
+    }
 
     const int new_weight = 416;
     const int new_height = 416;

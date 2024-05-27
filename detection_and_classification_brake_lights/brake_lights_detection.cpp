@@ -62,7 +62,7 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
 
 int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v) { 
 
-    int total_sum = 0;
+    int total_sum = 0; 
 
     for (int i = 0; i < stats.rows; ++i) {
         for (int j = 0; j < stats.rows; ++j) {
@@ -127,7 +127,6 @@ double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const
 
 double calculate_I_D(int area_i, int area_j, float total_sum) {
     double I_D = (area_i + area_j) / total_sum;
-
   //  cout << "I_D " << (area_i + area_j) / total_sum << endl;  
   //  cout << "(area_i + area_j) " << (area_i + area_j) << " total_sum " << total_sum << endl;
 
@@ -207,15 +206,9 @@ double calculate_I_tb(double u_k, double u_l, double u_r) {
 vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, const Mat& centroids, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S) {
 
     double max_ij = -1.0;
-
     vector<int> vector_max = { 0, 0 };
-
     float img_height = half_img_weight * 2;
-
-    int total_sum = calculate_total_area(stats, centroids, tao_v);
-    // cout << "total_sum" << total_sum;
-    //  cout << "centroids " << centroids; 
-
+    int total_sum = calculate_total_area(stats, centroids, tao_v); 
 
     for (int i = 0; i < stats.rows; ++i) { 
         for (int j = i + 1; j < stats.rows; ++j) {  
@@ -235,8 +228,7 @@ vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, co
 
     return vector_max;
 }
-
-// Поиск индекса третьей фар 
+ 
 
 int find_third_brake_light(const Mat& stats, const Mat& centroids, const vector<int>& vector_max, float tao_tb) {
     int index_third_light = -1; 
@@ -248,8 +240,7 @@ int find_third_brake_light(const Mat& stats, const Mat& centroids, const vector<
             if ((centroids.row(i).at<double>(1) <= (centroids.row(index_l_light).at<double>(1) + centroids.row(index_r_light).at<double>(1)) / 2) && ((stats.row(index_l_light).at<int>(4) + stats.row(index_r_light).at<int>(4)) >= stats.row(i).at<int>(4))
                 && (stats.row(i).at<int>(2) / stats.row(i).at<int>(3)) > 1) 
                 {
-                double I_tb = calculate_I_tb(centroids.row(i).at<double>(0), centroids.row(index_l_light).at<double>(0), centroids.row(index_r_light).at<double>(0));
-             //   cout << "I_tb" << I_tb << endl;
+                double I_tb = calculate_I_tb(centroids.row(i).at<double>(0), centroids.row(index_l_light).at<double>(0), centroids.row(index_r_light).at<double>(0)); 
                 if (I_tb > tao_tb && (I_tb > max_I_tb || index_third_light == -1)) {
                     max_I_tb = I_tb;
                     index_third_light = i; 
@@ -283,7 +274,6 @@ void filter_rectangels(const Mat& stats, const Mat& centroids, Mat& filteredStat
 
 void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filteredCentroids, const Mat resized_img) {
     Mat bin_img;
-    Mat bl;
     int maxValue = 255;
     double thresh = threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); //  THRESH_OTSU
 
@@ -291,7 +281,7 @@ void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filt
    // imshow("Image after Otsu Threshold", bin_img);
 
     Mat labels, stats, centroids;
-    int numLabels = connectedComponentsWithStats(bin_img, labels, stats, centroids);
+    int num_labels = connectedComponentsWithStats(bin_img, labels, stats, centroids);
 
     // imwrite(std::string("Otsu_img.png").c_str(), bin_img);
 
@@ -345,10 +335,6 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
 
     get_rectangle_for_detector(lab_channels[A_CHANNEL], stats, centroids, img);
 
-    // cout << "total_sum" << total_sum;
-    //  cout << "centroids " << centroids; 
-
-
     vector<int> vector_max = find_lateral_brake_light(half_img_weight, stats, centroids, lambda_S, lambda_D, lambda_U, tao_v, tao_S);
 
     Mat brake_light;
@@ -358,10 +344,9 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
         brake_light = get_brake_light(stats, vector_max, index_third_light);
     }
 
-   if (brake_light.rows < 3) {
+    if (brake_light.rows < 3) {
 
         vector<Mat> HSV_channels(3);
-
         const int v = 2;
 
         img_preprocessing_HSV(img, HSV_channels);
@@ -376,7 +361,7 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
             brake_light = get_brake_light(stats, vector_max, index_third_light);
 
         }
-    }  
+    }
 
-    return brake_light; 
-}
+    return brake_light;
+} 

@@ -1,168 +1,153 @@
-﻿#include <opencv2/opencv.hpp> 
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>  
-#include <fstream> 
+﻿#include"Header_files/video_processing.h"
 
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
-#include <filesystem> 
-#include <experimental/filesystem> 
-#include <regex> 
-
-#include "brake_lights_detecthion.h" 
-
-namespace fs = std::experimental::filesystem; 
-
-Mat convertToLab2(const Mat& image) {
-    Mat Lab_image;
-    cvtColor(image, Lab_image, 45);
-    return Lab_image;
+Mat convert_to_Lab(const Mat& image) {
+    Mat lab_image;
+    cvtColor(image, lab_image, 45);
+    return lab_image;
 }
 
 
-void img_preprocessing2(Mat& image, vector<Mat>& lab_channels, const int weight, const int height) {
+void img_preprocessing(Mat& image, vector<Mat>& lab_channels, const int weight, const int height) {
 
     resize(image, image, Size(weight, height), INTER_LINEAR);
 
-    Mat Lab_image = convertToLab2(image);
+    Mat lab_image = convert_to_Lab(image);
 
-    split(Lab_image, lab_channels);
+    split(lab_image, lab_channels);
 }
 
-int get_video() {
+int get_video(const string& video_path, const string& label_path) {
 
-    VideoCapture cap("videoplayback.mp4");
-    vector<string> input_folders = { "default_video/label_2" };
+    /* VideoCapture cap("videoplayback.mp4");
+     vector<string> input_folders = { "default_video/label_2" };*/
 
-   // VideoCapture cap("car_black.mp4");
-   // vector<string> input_folders = { "default_car_black/label_2" };
+    Ptr<SVM> svm_lat = SVM::load("svm_model_lateral.yml");
+    Ptr<SVM> svm_th = SVM::load("svm_model_third.yml");
+
+    VideoCapture cap("car_black.mp4");
+    vector<string> input_folders = { "default_car_black/label_2" };
 
     if (!cap.isOpened()) {
         cout << "Error opening video stream or file" << endl;
         return -1;
     }
 
-    Ptr<SVM> svm_lat = SVM::load("svm_model_lateral.yml");
-    Ptr<SVM> svm_th = SVM::load("svm_model_third.yml"); 
+    int orig_height = cap.get(CAP_PROP_FRAME_WIDTH);
+    int orig_width = cap.get(CAP_PROP_FRAME_HEIGHT);
+
+    const string folder = "default_car_black/label_2";
 
     // while (1) {
-    for (const string& folder : input_folders) {
-        for (const auto& entry : fs::directory_iterator{ folder }) {
-            Mat frame;
 
-            cap >> frame;
+    for (const auto& entry : fs::directory_iterator{ folder }) {
 
-            if (frame.empty())
-                break;
+        Mat frame;
+        cap >> frame;
 
-            string label_path = entry.path().string();
-            cout << label_path << endl;
+        if (frame.empty())
+            break;
 
-            std::ifstream file(label_path);
-            std::string line;
-            string label__;
-            float x, y, x2, y2, n, n1, n2;
+        string label_path = entry.path().string();
+        //  cout << label_path << endl;
 
-            while (std::getline(file, line)) {
+        ifstream file(label_path);
+        string line;
 
-                std::istringstream iss(line);
-                iss >> label__;
-                iss >> n >> n1 >> n2 >> x >> y >> x2 >> y2;
+        float x, y, x2, y2;
 
-            }
-            cv::Rect car(x, y, x2 - x, y2 - y);
+        while (std::getline(file, line)) {
 
-            // cout << rect; 
+            std::istringstream iss(line);
+            string label_str;
+            float  n, n1, n2;
+            iss >> label_str;
+            iss >> n >> n1 >> n2 >> x >> y >> x2 >> y2;
 
-            // frame = frame(rect); 
-
-            Mat frame_orig = frame;
-
-            int new_weight = 416;
-            int new_height = 416;
-
-            Mat img_ROI = frame(car);
-
-        //    resize(img_ROI, img_ROI, Size(new_weight, new_height), INTER_LINEAR);
-
-            vector<Mat> lab_channels(3);
-
-            img_preprocessing2(img_ROI, lab_channels, new_weight, new_height);
-            
-            Mat orig_ROI = img_ROI;
-
-            double lambda_S = 0.45, lambda_D = 0.35, lambda_U = 0.2;
-            float tao_tb = 0.67;
-            float tao_S = 0.45;
-            int tao_v = 32;
-
-            Mat lateral_stats = detector(lab_channels, img_ROI, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb);
-            Mat frame_out = frame.clone();
-
-            // double thresh = cv::threshold(lab_channels[1], img_ROI, 0, 255, THRESH_TRIANGLE);
-
-            Mat data_l, data_r, data_third; 
-
-            int label_class = 0; 
-
-            if (lateral_stats.rows >= 2)
-            {
-                classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, frame);  
-
-                Mat predict_data_l, predict_data_r, predict_data_third;
-
-                cout << data_l << endl << data_r << endl << data_third << endl; 
-
-                Mat dataMat_test(data_l.rows + data_r.rows, data_l.cols, CV_32F);
-
-                cv::vconcat(data_l, data_r, dataMat_test);
-                
-                
-
-                cout << "Here 1" << predict_data_third << endl; 
-
-                svm_lat->predict(dataMat_test, predict_data_l); 
-              // svm_lat->predict(data_r, predict_data_r); 
-                if (lateral_stats.rows < 3) {
-                    svm_th->predict(data_third, predict_data_third);
-
-                    cout << "Here 2 --- " << predict_data_l.at<float>(0) << " " << predict_data_l.at<float>(1) << endl;
-
-                    if (predict_data_l.at<float>(0) + predict_data_l.at<float>(1) + predict_data_third.at<float>(0) >= 3)
-                        label_class = 1;
-                }
-                else {
-                    if (predict_data_l.at<float>(0) + predict_data_l.at<float>(1) >= 2) 
-                        label_class = 1;
-                }
-            }
-
-            cout << label_class << endl; 
-            
-
-            for (int i = 0; i < lateral_stats.rows; ++i) { 
-
-                cv::Rect r(lateral_stats.row(i).at<int>(cv::CC_STAT_LEFT), lateral_stats.row(i).at<int>(cv::CC_STAT_TOP), lateral_stats.row(i).at<int>(cv::CC_STAT_WIDTH), lateral_stats.row(i).at<int>(cv::CC_STAT_HEIGHT));
-                cv::rectangle(img_ROI, r, cv::Scalar(0, 0, 200), 3); 
-
-                string text; 
-                if (label_class == 0)
-                    text = "OFF";
-                else
-                    text = "ON";
-                cv::putText(img_ROI, text, cv::Point(r.x, r.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
-            }
-
-            imshow("Frame", img_ROI);
-
-            // Press  ESC on keyboard to exit
-            char c = (char)waitKey(25);
-            if (c == 27)
-                break;
         }
+
+        Rect car(x, y, x2 - x, y2 - y);
+        Mat frame_orig = frame;
+
+        int new_width = 416;
+        int new_height = 416;
+
+        Mat img_ROI = frame(car);
+        vector<Mat> lab_channels(3);
+
+        img_preprocessing(img_ROI, lab_channels, new_width, new_height);
+
+        Parameters parameters;
+        Mat lateral_stats = detector(lab_channels, img_ROI, parameters.lambda_S, parameters.lambda_D, parameters.lambda_U, parameters.tao_v, parameters.tao_S, parameters.tao_tb);
+        int label_class = 0;
+
+        if (lateral_stats.rows >= 2)
+        {
+            Mat predict_data_l, predict_data_r, predict_data_third;
+            Mat data_l, data_r, data_third;
+            classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, frame);
+            //  cout << data_l << endl << data_r << endl << data_third << endl; 
+
+            Mat data_mat_test(data_l.rows + data_r.rows, data_l.cols, CV_32F);
+            cv::vconcat(data_l, data_r, data_mat_test);
+
+            svm_lat->predict(data_mat_test, predict_data_l);
+
+            if (lateral_stats.rows == 3) {
+                svm_th->predict(data_third, predict_data_third);
+                if (predict_data_l.at<float>(0) + predict_data_l.at<float>(1) + predict_data_third.at<float>(0) >= 3)
+                    label_class = 1;
+            }
+            else {
+                if (predict_data_l.at<float>(0) + predict_data_l.at<float>(1) >= 2)
+                    label_class = 1;
+            }
+        }
+
+        for (int i = 0; i < lateral_stats.rows; ++i) {
+
+            Rect r(lateral_stats.row(i).at<int>(CC_STAT_LEFT), lateral_stats.row(i).at<int>(CC_STAT_TOP), lateral_stats.row(i).at<int>(CC_STAT_WIDTH), lateral_stats.row(i).at<int>(CC_STAT_HEIGHT));
+            rectangle(img_ROI, r, Scalar(0, 0, 200), 3);
+            string text;
+
+            if (label_class == 0)
+                text = "OFF";
+            else
+                text = "ON";
+            putText(img_ROI, text, Point(r.x, r.y - 10), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255), 2);
+        }
+
+        for (int i = 0; i < lateral_stats.rows; ++i) {
+
+            int x_lights = (lateral_stats.row(i).at<int>(CC_STAT_LEFT)) * (orig_width / new_width) + car.x;
+            int y_lights = (lateral_stats.row(i).at<int>(CC_STAT_TOP)) * (orig_height / new_height) + car.y;
+            int width_rect = lateral_stats.row(i).at<int>(CC_STAT_WIDTH) * (orig_width / new_width);
+            int height_rect = lateral_stats.row(i).at<int>(CC_STAT_HEIGHT) * (orig_height / new_height);  
+
+            Rect r(x_lights, y_lights, x_lights + width_rect, y_lights + height_rect);
+            rectangle(frame_orig, r, Scalar(0, 0, 200), 3);
+
+            string text;
+            if (label_class == 0)
+                text = "OFF";
+            else
+                text = "ON";
+            putText(frame_orig, text, Point(r.x, r.y - 10), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255), 2);
+        }
+
+        imshow("Frame", img_ROI);
+
+        // Press  ESC on keyboard to exit
+        char c = (char)waitKey(25);
+        if (c == 27)
+            break;
     }
-} 
+
+    double fps = cap.get(CAP_PROP_FPS);
+    cout << "Frames per second using video.get(CAP_PROP_FPS) : " << fps << endl;
+    cap.release();
+
+    return 0; 
+
+}
 
 
