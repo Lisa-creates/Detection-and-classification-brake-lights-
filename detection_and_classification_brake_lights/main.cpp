@@ -3,15 +3,10 @@
 #include <fstream>
 #include <vector> 
 
-// #include "brake_lights_classification.cpp" 
-// #include "video_processing.cpp" 
-// #include "test_detector.cpp" 
 #include"Header_files/brake_lights_classification.h"
 #include "Header_files/test_detector.h" 
 #include "Header_files/brake_lights_detection.h" 
 #include"Header_files/video_processing.h"
-
-// #include "pugixml.hpp"
 
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
 #include <experimental/filesystem>  
@@ -29,8 +24,6 @@ void drawBoundingRectangles(const cv::Mat image, const cv::Mat stats) {
                 stats.at<int>(i, cv::CC_STAT_TOP) + stats.at<int>(i, cv::CC_STAT_HEIGHT)),
             cv::Scalar(0, 255, 0), 2);
     }
-
-    // imwrite(std::string("Rectangles.png").c_str(), image);
 }
 
 void get_features_from_dataset(const vector<string>& input_folders_test, int new_weight, int new_height, Mat& data_l, Mat& data_r, Mat& data_third, Mat& labels_test, Mat& labels_test_classifier) {
@@ -62,10 +55,7 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
             if (lateral_stats.rows >= 2) {
                 classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, img);
-                //  detecting_light_on++;
-                  //  imwrite(std::string("LAB\\" + std::to_string(total) + "r.png").c_str(), img);
                 drawBoundingRectangles(img, lateral_stats);
-            //    imwrite(std::string("LAB\\" + std::to_string(total) + ".png").c_str(), img);
             }
 
 
@@ -100,17 +90,6 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
 int main(int argc, char** argv)
 {
-    // pugi::xml_document doc;
-      // Mat image = imread("C:\\testdrive1583149193.4818494.png"); 
-    Mat image = imread("C:\\testdrive1583149150.6489925.png"); // красная 
-   //  Mat image = imread("C:\\testdrive1583149169.625285.png"); // красная с включёнными 
-   // Mat image = imread("C:\\testdrive1583149191.58733.png"); // белая 
-    //  Mat image = imread("C:\\testdrive1580902052.9363065.png");
-     // Mat image = imread("C:\\11r.png"); 
-    // Mat image = imread("C:\\18r.png");
-  //  Mat image = imread("C:\\testdrive1583149188.5726807.png"); 
-     //  Mat image = imread("C:\\red_off.png"); 
-
     setlocale(LC_ALL, "Russian"); 
 
     int action; 
@@ -121,13 +100,6 @@ int main(int argc, char** argv)
         "3 - for testing the detector" << endl;
 
     cin >> action; 
-    
-    if (image.empty())
-    {
-        cout << "Image Not Found!!!" << endl;
-        cin.get(); //wait for any key press 
-        return -1;
-    }
 
     if (action == 1)
     {
@@ -135,7 +107,6 @@ int main(int argc, char** argv)
         const string input_label = "default_video/label_2"; // your path 
 
         get_video(video_path, input_label);
-        //get_test_for_detector(); 
         waitKey(0);
 
         return 0; 
@@ -150,8 +121,8 @@ int main(int argc, char** argv)
     const int new_weight = 416;
     const int new_height = 416;
 
-    vector<string> input_folders_train = { "TRAIN_LR/brake_TRAIN_OFF", "TRAIN_LR/brake_ON_TRAIN" };
-    vector<string> input_folders_test = { "TEST_LR/brake_TEST_OFF", "TEST_LR/brake_ON_TEST" };
+    vector<string> input_folders_train = { "TRAIN_LR/brake_TRAIN_OFF", "TRAIN_LR/brake_ON_TRAIN" }; // your path 
+    vector<string> input_folders_test = { "TEST_LR/brake_TEST_OFF", "TEST_LR/brake_ON_TEST" }; // your path 
 
     vector<vector<int>> features_test;
     Mat labels_train;
@@ -184,62 +155,6 @@ int main(int argc, char** argv)
     main_classifier(predict_LR_train, predict_th_train, labels_train_classifier);
     main_classifier(predict_LR, predict_th, labels_test_classifier);
 
-    Mat resized_img = image.clone();
-    vector<Mat> lab_channels(3);
-
-    img_preprocessing(image, lab_channels, new_weight, new_height);
-
-    int a = 1;
-
-    imshow("a channel", lab_channels[a]);
-
-    /*
-        Применение порогового значения Оцу
-     */
-
-
-     // Mat filteredStats, filteredCentroids;
-
-     // get_rectangle_for_detector(lab_channels[a], filteredStats, filteredCentroids, image);
-
-    //  cv::imshow("Исходное изображение с метками", image);
-
-    double lambda_S = 0.3, lambda_D = 0.5, lambda_U = 0.2;
-    float tao_tb = 0.85;
-    float tao_S = 0.45;
-    int tao_v = 28;
-
-    Mat lateral_stats = detector(lab_channels, image, lambda_S, lambda_D, lambda_U, tao_v, tao_S, tao_tb);  
- 
-    cout << "lateral " << lateral_stats << endl;
-
-
-    Mat new_i = image.clone();
-
-    drawBoundingRectangles(resized_img, lateral_stats);
-    imwrite("third_light.png", resized_img);
-
-    //  Mat labels_test_, labels_test_classifier_;
-
-   // classifier_get_features(data_l, data_r, data_third, filteredStats, lab_channels, image);
-
-    //  labels_test_classifier_ = { 1, 0 }; 
-
-    //  cout << "data_l = " << data_l << "labels_test_classifier = " << labels_test_classifier_ << endl; 
-
-    //SVM_classifier_third_light(data_l_, labels_test_classifier_);
-
-
-    /*for (int i = 0; i < data_l.size(); i++)
-     {
-         for (int j = 0; j < data_l[i].size(); j++)
-         {
-             cout << data_l[i][j] << "   ";
-         }
-     }
-     */
-
-     // Wait for any keystroke in the window
     waitKey(0);
     return 0;
 } 
