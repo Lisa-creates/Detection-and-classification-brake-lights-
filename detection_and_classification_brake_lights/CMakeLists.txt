@@ -8,4 +8,6 @@ add_executable(brake_lights_status_classification "main.cpp" "brake_lights_detec
 
 find_package(OpenCV REQUIRED)
 
+target_include_directories(brake_lights_status_classification PUBLIC include/)
+
 target_link_libraries(brake_lights_status_classification ${OpenCV_LIBS}) 

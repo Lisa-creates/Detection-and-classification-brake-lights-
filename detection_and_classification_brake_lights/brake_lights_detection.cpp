@@ -1,4 +1,4 @@
-#include "Header_files/brake_lights_detection.h"
+#include "brake_lights_detection.h"
 
 int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v); 
 void rect_in_center(Rect& rect2, const Mat& centroids_i, const Mat& centroids_j);
@@ -59,11 +59,9 @@ void filter_rectangels(const Mat& stats, const Mat& centroids, Mat& filteredStat
  */
 Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S, float tao_tb); 
 
-
 int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v) { 
 
     int total_sum = 0; 
-
     for (int i = 0; i < stats.rows; ++i) {
         for (int j = 0; j < stats.rows; ++j) {
             if (i != j && abs(centroids.row(i).at<double>(1) - centroids.row(j).at<double>(1)) < tao_v) {
@@ -72,20 +70,14 @@ int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v) {
             } 
         }
     } 
-
    // cout << " total_sum " << total_sum << endl;
-
     return total_sum;
 } 
-
-
 
 void rect_in_center(Rect& rect2, const Mat& centroids_i, const Mat& centroids_j) {
     rect2.x += (centroids_i.at<double>(0) - centroids_j.at<double>(0));
     rect2.y += (centroids_i.at<double>(1) - centroids_j.at<double>(1));
 }  
-
-
 
 double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const Mat& centroids_i, const Mat& centroids_j) {
     Rect R_i(stats_i.at<int>(cv::CC_STAT_LEFT), stats_i.at<int>(cv::CC_STAT_TOP), stats_i.at<int>(cv::CC_STAT_WIDTH), stats_i.at<int>(cv::CC_STAT_HEIGHT));
@@ -97,25 +89,6 @@ double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const
     if (union_R.area() != 0) {
         Rect intersection = R_i & R_j;
         double I_S = float(intersection.area()) / float(union_R.area());
-
-        /*   if (intersection.area() > 0) {
-                std::cout << "Intersection found: " << intersection << std::endl;
-                cout << intersection.area() << std::endl;
-            }
-            else {
-                std::cout << "No intersection found 1" << std::endl;
-            }
-
-            if (unionRect.area() > 0) {
-                std::cout << "Union found: " << unionRect << std::endl;
-                cout << unionRect.area() << std::endl;
-            }
-            else {
-                std::cout << "No unionRect found 1" << std::endl;
-            }
-
-            cout << "I_S " << I_S << std::endl; */ 
-
         if (I_S >= tao_S) 
             return I_S;
         else
@@ -143,9 +116,6 @@ double calculate_I_U(double u_R_i, double u_R_j, float half_img_weight) {
     if (denominator == 0.0 || numerator < 0.0 || denominator < 0.0)
         return -1; 
 
-  //  << " numerator / denominator " << numerator / denominator << endl;
-  //  cout << "b " << b; 
-
     double I_U = max(0.0, numerator / denominator); 
     if (I_U == 0)
         return - 1; 
@@ -166,7 +136,6 @@ double calculate_I_lb(const Mat& stats_i, const Mat& centroids_i, const Mat& sta
             return -1;
 
         double I_D = calculate_I_D(stats_i.at<int>(4), stats_j.at<int>(4), float(total_sum_rectangles)); 
-        
         if (I_D == 1)
             return -2; 
       //  cout << endl << stats_i.at<int>(4) << "  " << stats_j.at<int>(4) <<"   " << float(total_sum_rectangles) << endl;
@@ -180,18 +149,14 @@ double calculate_I_lb(const Mat& stats_i, const Mat& centroids_i, const Mat& sta
             //    right_and_left = true; 
             I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
         } 
-
         if (I_U == -1)
             return -1; 
-
         // cout  << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl; 
-
         double I_lb = lambda_S * I_S + lambda_D * I_D + lambda_U * I_U;
      //   cout << "I_lb " << I_lb << endl;
         return I_lb;
     }
 } 
-
 
 double calculate_I_tb(double u_k, double u_l, double u_r) {
     double numerator = min(u_k, (u_l + u_r) / 2);
@@ -200,8 +165,6 @@ double calculate_I_tb(double u_k, double u_l, double u_r) {
     double I_tb = numerator / denominator; 
     return I_tb;
 } 
-
-
 
 vector<int> find_lateral_brake_light(float half_img_weight, const Mat& stats, const Mat& centroids, float lambda_S, float lambda_D, float lambda_U, int tao_v, float tao_S) {
 
@@ -286,12 +249,9 @@ void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filt
     // imwrite(std::string("Otsu_img.png").c_str(), bin_img);
 
     filter_rectangels(stats, centroids, filteredStats, filteredCentroids, resized_img);
-    //  cout << "After filtr" << filteredStats << endl; 
-
  //   drawBoundingRectangles(resized_img, filteredStats);
  //   imwrite(std::string("with_rectangels.png").c_str(), resized_img);
 } 
-
 
 Mat get_brake_light(const Mat& stats, const vector<int>& vector_max, int index_third_light) {
     Mat brake_light;
@@ -311,8 +271,6 @@ Mat get_brake_light(const Mat& stats, const vector<int>& vector_max, int index_t
 
     return brake_light;
 }
-
-
 
 void img_preprocessing_HSV(Mat& image, vector<Mat>& HSV_channels) {
 
@@ -359,9 +317,9 @@ Mat detector(const vector<Mat>& lab_channels, Mat& img, float lambda_S, float la
 
             int index_third_light = find_third_brake_light(stats, centroids, vector_max, tao_tb);
             brake_light = get_brake_light(stats, vector_max, index_third_light);
-
         }
     }
 
     return brake_light;
+
 } 

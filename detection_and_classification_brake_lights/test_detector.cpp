@@ -1,4 +1,4 @@
-#include "Header_files/test_detector.h" 
+#include "test_detector.h" 
 
 
 void test_detector(int& total_zero, int& positive, float lambda_S, float lambda_D, float lambda_U, const string& folder, int tao_v, float tao_S, float tao_tb) {
@@ -20,8 +20,6 @@ void test_detector(int& total_zero, int& positive, float lambda_S, float lambda_
             string label, label2;
             float x, y, x2, y2, n, n1, n2;
             iss >> label;
-            //  cout << label; 
-
             if (label == "BRAKE")
             {
                 iss >> label2 >> n >> n1 >> n2 >> x >> y >> x2 >> y2;
@@ -88,14 +86,12 @@ vector <float> choice_lambda(const string& folders, int tao_v, float tao_S, floa
 
     int total_zero_m = 40; 
     int positive_m = 0;
-
-    // Итерация по файлам 
+ 
     float lambda_S, lambda_D, lambda_U, lambda_S_m, lambda_D_m;
     float min_value = 0.1; 
     float max_value = 0.9; 
     float step = 0.1; 
 
-    // Перебор значений
     for (lambda_S = min_value; lambda_S <= max_value; lambda_S += step) {
         for (lambda_D = min_value; lambda_D <= max_value - lambda_S; lambda_D += step) {
             lambda_U = 1 - lambda_S - lambda_D;
@@ -104,7 +100,6 @@ vector <float> choice_lambda(const string& folders, int tao_v, float tao_S, floa
                 int positive = 0; 
                
                 test_detector(total_zero, positive, lambda_S, lambda_D, lambda_U, folders, tao_v, tao_S, tao_tb);
-                //  cout "mIoU: " << maxIoU / 100 << endl;
                 if (positive >= positive_m && total_zero <= total_zero_m)
                 {
                     lambda_S_m = lambda_S;
@@ -132,7 +127,6 @@ void choice_tao(const string& input_folders, float lambda_S, float lambda_D, flo
     const float max_value = 0.95;
     const float step = 0.05; 
 
-    // Перебор значений
      for (tao_S = min_value; tao_S <= max_value; tao_S += step) {
          int total_zero = 0;
          int positive = 0;

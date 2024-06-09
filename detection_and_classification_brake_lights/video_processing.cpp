@@ -1,4 +1,4 @@
-﻿#include"Header_files/video_processing.h"
+﻿#include"video_processing.h"
 
 Mat convert_to_Lab(const Mat& image) {
     Mat lab_image;
@@ -6,22 +6,16 @@ Mat convert_to_Lab(const Mat& image) {
     return lab_image;
 }
 
-
 void img_preprocessing(Mat& image, vector<Mat>& lab_channels, const int weight, const int height) {
 
     resize(image, image, Size(weight, height), INTER_LINEAR);
-
     Mat lab_image = convert_to_Lab(image);
-
     split(lab_image, lab_channels);
 }
 
-int get_video(const string& video_path, const string& label_path) {
+int get_video(const string& video_path, const string& label_path) { 
 
-    /* VideoCapture cap("videoplayback.mp4");
-     vector<string> input_folders = { "default_video/label_2" };*/
-
-    Ptr<SVM> svm_lat = SVM::load("svm_model_lateral.yml");
+    Ptr<SVM> svm_lat = SVM::load("svm_model_lateral.yml"); 
     Ptr<SVM> svm_th = SVM::load("svm_model_third.yml");
 
     VideoCapture cap("car_black.mp4");
@@ -37,8 +31,6 @@ int get_video(const string& video_path, const string& label_path) {
 
     const string folder = "default_car_black/label_2";
 
-    // while (1) {
-
     for (const auto& entry : fs::directory_iterator{ folder }) {
 
         Mat frame;
@@ -48,7 +40,6 @@ int get_video(const string& video_path, const string& label_path) {
             break;
 
         string label_path = entry.path().string();
-        //  cout << label_path << endl;
 
         ifstream file(label_path);
         string line;
@@ -56,7 +47,6 @@ int get_video(const string& video_path, const string& label_path) {
         float x, y, x2, y2;
 
         while (std::getline(file, line)) {
-
             std::istringstream iss(line);
             string label_str;
             float  n, n1, n2;
@@ -136,7 +126,6 @@ int get_video(const string& video_path, const string& label_path) {
 
         imshow("Frame", img_ROI);
 
-        // Press  ESC on keyboard to exit
         char c = (char)waitKey(25);
         if (c == 27)
             break;
