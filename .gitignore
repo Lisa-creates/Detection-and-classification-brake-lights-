@@ -1,5 +1,6 @@
 *.jpg
-*.png
+*.png 
+*.json 
 
 out/
 
@@ -395,4 +396,16 @@ FodyWeavers.xsd
 *.msp
 
 # JetBrains Rider
-*.sln.iml
+*.sln.iml 
+
+ALL_BUILD.vcxproj
+ALL_BUILD.vcxproj.filters
+CMakeCache.txt
+CMakeFiles/
+ZERO_CHECK.vcxproj
+ZERO_CHECK.vcxproj.filters
+cmake_install.cmake
+detection_and_classification_brake_lights.sln
+detection_and_classification_brake_lights/brake_lights_status_classification.vcxproj
+detection_and_classification_brake_lights/brake_lights_status_classification.vcxproj.filters
+detection_and_classification_brake_lights/cmake_install.cmake 
