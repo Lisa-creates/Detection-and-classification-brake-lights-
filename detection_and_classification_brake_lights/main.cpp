@@ -3,15 +3,14 @@
 #include <fstream>
 #include <vector> 
 
-#include"Header_files/brake_lights_classification.h"
-#include "Header_files/test_detector.h" 
-#include "Header_files/brake_lights_detection.h" 
-#include"Header_files/video_processing.h"
+#include"brake_lights_classification.h"
+#include "test_detector.h" 
+#include "brake_lights_detection.h" 
+#include"video_processing.h" 
 
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
-#include <experimental/filesystem>  
+#include <filesystem>  
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem; 
 
 using namespace cv;
 using namespace std; 
@@ -93,7 +92,7 @@ int main(int argc, char** argv)
     setlocale(LC_ALL, "Russian"); 
 
     int action; 
-
+    cout << "Yo"; 
     cout << "Choose an action: "<< endl <<
         "1 - for video" << endl <<
         "2 - for photos and model training" << endl <<

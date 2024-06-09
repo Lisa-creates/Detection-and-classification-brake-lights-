@@ -13,7 +13,7 @@ jobs:
           branch: '4.9.0'
           BUILD_LIST: core,imgproc,imgcodecs,videoio,highgui,video,calib3d,features2d,objdetect,dnn,ml,photo,gapi
       - name: Set path to OpenCV
-        run: (Get-Content detection_and_classification_brake_lights/CMakeLists.txt).Replace('C:/opencv/build', '../build') | Set-Content detection_and_classification_brake_lights/CMakeLists.txt
+        run: (Get-Content detection_and_classification_brake_lights/CMakeLists.txt).Replace('C:/opencv/build', '../../build') | Set-Content detection_and_classification_brake_lights/CMakeLists.txt
       - name: Build project
         run: |
           cmake .
