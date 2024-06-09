@@ -1,20 +1,20 @@
-#include <opencv2/opencv.hpp> 
 #include <iostream>  
 #include <fstream>
+#include <filesystem>
 #include <vector> 
 
-#include"brake_lights_classification.h"
-#include "test_detector.h" 
-#include "brake_lights_detection.h" 
-#include"video_processing.h" 
+#include "CLI11.hpp" 
+#include <opencv2/opencv.hpp> 
 
-#include <filesystem>  
+#include "brake_lights_classification.h"
+#include "brake_lights_detection.h" 
+#include "test_detector.h" 
+#include "video_processing.h" 
 
 namespace fs = std::filesystem; 
 
 using namespace cv;
 using namespace std; 
-
 
 void drawBoundingRectangles(const cv::Mat image, const cv::Mat stats) {
     for (int i = 0; i < stats.rows; ++i) {
@@ -80,7 +80,7 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
         }
     }
 
-    cout << img_name[0]; 
+   // cout << img_name[0]; 
 
     std::cout << endl << "detecting_light_on " << detecting_light_on << "detecting_light_off" << detecting_light_off << " total " << total << endl;
 }
@@ -89,30 +89,33 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
 
 int main(int argc, char** argv)
 {
-    setlocale(LC_ALL, "Russian"); 
+    CLI::App app{};
+    argv = app.ensure_utf8(argv);
 
-    int action; 
-    cout << "Yo"; 
-    cout << "Choose an action: "<< endl <<
-        "1 - for video" << endl <<
-        "2 - for photos and model training" << endl <<
-        "3 - for testing the detector" << endl;
+    string user_action = "2";
+    string action_help = "Choose an action:\n" \
+        "1 - for video\n" \
+        "2 - for photos and model training\n" \
+        "3 - for testing the detector";
 
-    cin >> action; 
+    app.add_option("-a,--action", user_action, action_help);
+    CLI11_PARSE(app, argc, argv);
 
-    if (action == 1)
+    string action = user_action; 
+
+    if (action == "1")
     {
         const string video_path = "videoplayback.mp4"; // your path 
         const string input_label = "default_video/label_2"; // your path 
 
         get_video(video_path, input_label);
-        waitKey(0);
+       // waitKey(0);
 
         return 0; 
     }
-    else if (action == 3) {
+    else if (action == "3") {
         get_test_for_detector();
-        waitKey(0);
+     //   waitKey(0);
 
         return 0; 
     }
@@ -135,7 +138,7 @@ int main(int argc, char** argv)
 
     get_features_from_dataset(input_folders_train, new_weight, new_height, data_l, data_r, data_third, labels_train, labels_train_classifier);
 
-    cout << endl << labels_train_classifier.size() << " data " << data_third.size() << endl;
+   // cout << endl << labels_train_classifier.size() << " data " << data_third.size() << endl;
 
 
     Mat labels_test;
@@ -154,6 +157,6 @@ int main(int argc, char** argv)
     main_classifier(predict_LR_train, predict_th_train, labels_train_classifier);
     main_classifier(predict_LR, predict_th, labels_test_classifier);
 
-    waitKey(0);
+  //  waitKey(0);
     return 0;
 } 
