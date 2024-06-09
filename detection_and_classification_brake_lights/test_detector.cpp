@@ -1,6 +1,5 @@
 #include "test_detector.h" 
 
-
 void test_detector(int& total_zero, int& positive, float lambda_S, float lambda_D, float lambda_U, const string& folder, int tao_v, float tao_S, float tao_tb) {
 
     for (const auto& entry : fs::directory_iterator{ folder }) {

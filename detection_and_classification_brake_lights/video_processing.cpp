@@ -75,7 +75,6 @@ int get_video(const string& video_path, const string& label_path) {
             Mat predict_data_l, predict_data_r, predict_data_third;
             Mat data_l, data_r, data_third;
             classifier_get_features(data_l, data_r, data_third, lateral_stats, lab_channels, frame);
-            //  cout << data_l << endl << data_r << endl << data_third << endl; 
 
             Mat data_mat_test(data_l.rows + data_r.rows, data_l.cols, CV_32F);
             cv::vconcat(data_l, data_r, data_mat_test);

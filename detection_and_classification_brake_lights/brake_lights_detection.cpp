@@ -212,7 +212,7 @@ void filter_rectangels(const Mat& stats, const Mat& centroids, Mat& filteredStat
 
 
         if (!(wight <= 16 && height <= 16) && !(wight == wight_img && height == height_img) && stats.at<int>(r, cv::CC_STAT_AREA) >= 110 && stats.at<int>(r, cv::CC_STAT_AREA) <= height_img * 24
-            && stats.row(r).at<int>(1) + height <= (5 * height_img) / 6) { // 
+            && stats.row(r).at<int>(1) + height <= (5 * height_img) / 6) {  
             filteredStats.push_back(stats.row(r));
             filteredCentroids.push_back(centroids.row(r));
         }
@@ -222,7 +222,7 @@ void filter_rectangels(const Mat& stats, const Mat& centroids, Mat& filteredStat
 void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filteredCentroids, const Mat resized_img) {
     Mat bin_img;
     int maxValue = 255;
-    double thresh = threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); //  THRESH_OTSU
+    double thresh = threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); 
 
     Mat labels, stats, centroids;
     int num_labels = connectedComponentsWithStats(bin_img, labels, stats, centroids);
