@@ -80,8 +80,6 @@ void get_features_from_dataset(const vector<string>& input_folders_test, int new
         }
     }
 
-   // cout << img_name[0]; 
-
     std::cout << endl << "detecting_light_on " << detecting_light_on << "detecting_light_off" << detecting_light_off << " total " << total << endl;
 }
 
@@ -92,7 +90,7 @@ int main(int argc, char** argv)
     CLI::App app{};
     argv = app.ensure_utf8(argv);
 
-    string user_action = "2";
+    string user_action = "1";
     string action_help = "Choose an action:\n" \
         "1 - for video\n" \
         "2 - for photos and model training\n" \
@@ -109,14 +107,11 @@ int main(int argc, char** argv)
         const string input_label = "default_video/label_2"; // your path 
 
         get_video(video_path, input_label);
-       // waitKey(0);
 
         return 0; 
     }
     else if (action == "3") {
         get_test_for_detector();
-     //   waitKey(0);
-
         return 0; 
     }
 
@@ -138,9 +133,6 @@ int main(int argc, char** argv)
 
     get_features_from_dataset(input_folders_train, new_weight, new_height, data_l, data_r, data_third, labels_train, labels_train_classifier);
 
-   // cout << endl << labels_train_classifier.size() << " data " << data_third.size() << endl;
-
-
     Mat labels_test;
     Mat labels_test_classifier;
 
@@ -157,6 +149,5 @@ int main(int argc, char** argv)
     main_classifier(predict_LR_train, predict_th_train, labels_train_classifier);
     main_classifier(predict_LR, predict_th, labels_test_classifier);
 
-  //  waitKey(0);
     return 0;
 } 
