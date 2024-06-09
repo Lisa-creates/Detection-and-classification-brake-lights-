@@ -186,8 +186,6 @@ void get_test_for_detector() {
     int total_zero = 0;
     int positive = 0; 
 
-    // choice_tao(input_folders, parameters.lambda_S, parameters.lambda_D, parameters.lambda_U,  parameters.tao_v, parameters.tao_S, parameters.tao_tb, tao_v_opt, tao_S_opt, tao_tb_opt); 
-    // choice_lambda(input_folders, parameters.tao_v, parameters.tao_S, parameters.tao_tb); 
     test_detector(total_zero, positive, parameters.lambda_S, parameters.lambda_D, parameters.lambda_U, folder, parameters.tao_v, parameters.tao_S, parameters.tao_tb);
 
 }

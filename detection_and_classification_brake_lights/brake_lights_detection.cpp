@@ -70,7 +70,6 @@ int calculate_total_area(const Mat& stats, const Mat& centroids, int tao_v) {
             } 
         }
     } 
-   // cout << " total_sum " << total_sum << endl;
     return total_sum;
 } 
 
@@ -85,7 +84,6 @@ double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const
     
     rect_in_center(R_j, centroids_i, centroids_j); 
     Rect union_R = R_i | R_j; 
-    // cout << "intersection " << intersection << "unionRect " << unionRect << endl;
     if (union_R.area() != 0) {
         Rect intersection = R_i & R_j;
         double I_S = float(intersection.area()) / float(union_R.area());
@@ -100,18 +98,12 @@ double calculate_I_S(const Mat& stats_i, const Mat& stats_j, double tao_S, const
 
 double calculate_I_D(int area_i, int area_j, float total_sum) {
     double I_D = (area_i + area_j) / total_sum;
-  //  cout << "I_D " << (area_i + area_j) / total_sum << endl;  
-  //  cout << "(area_i + area_j) " << (area_i + area_j) << " total_sum " << total_sum << endl;
-
     return I_D; 
 } 
 
 double calculate_I_U(double u_R_i, double u_R_j, float half_img_weight) {
     double numerator = min((half_img_weight - u_R_i), (u_R_j - half_img_weight));
     double denominator = max((half_img_weight - u_R_i), (u_R_j - half_img_weight)); 
-
-  //  cout << "half_img_weight " << half_img_weight << "  u_R_i " << u_R_i << " u_R_j " << u_R_j;
-  //  cout << "numerator " << numerator << " denominator " << denominator << " numerator / denominator " << numerator / denominator << endl; 
     
     if (denominator == 0.0 || numerator < 0.0 || denominator < 0.0)
         return -1; 
@@ -138,22 +130,16 @@ double calculate_I_lb(const Mat& stats_i, const Mat& centroids_i, const Mat& sta
         double I_D = calculate_I_D(stats_i.at<int>(4), stats_j.at<int>(4), float(total_sum_rectangles)); 
         if (I_D == 1)
             return -2; 
-      //  cout << endl << stats_i.at<int>(4) << "  " << stats_j.at<int>(4) <<"   " << float(total_sum_rectangles) << endl;
         double I_U = 0; 
-     //   cout << endl << stats_j << "  " << stats_i << "   " << endl;
-     //   cout << endl << " centroids_j.at<double>(0) " << centroids_j.at<double>(0) << "centroids_i.at<double>(0) " << centroids_i.at<double>(0); 
         if (stats_i.at<int>(0) < stats_j.at<int>(0)) {
             I_U = calculate_I_U(centroids_i.at<double>(0), centroids_j.at<double>(0), half_img_weight);
         }
         else {
-            //    right_and_left = true; 
             I_U = calculate_I_U(centroids_j.at<double>(0), centroids_i.at<double>(0), half_img_weight);
         } 
         if (I_U == -1)
             return -1; 
-        // cout  << "I_S " << I_S << " I_D " << I_D << " I_U " << I_U << endl; 
         double I_lb = lambda_S * I_S + lambda_D * I_D + lambda_U * I_U;
-     //   cout << "I_lb " << I_lb << endl;
         return I_lb;
     }
 } 
@@ -161,7 +147,6 @@ double calculate_I_lb(const Mat& stats_i, const Mat& centroids_i, const Mat& sta
 double calculate_I_tb(double u_k, double u_l, double u_r) {
     double numerator = min(u_k, (u_l + u_r) / 2);
     double denominator = max(u_k, (u_l + u_r) / 2);
-    // cout << "numerator " << numerator << "denominator " << denominator << endl; 
     double I_tb = numerator / denominator; 
     return I_tb;
 } 
@@ -211,7 +196,6 @@ int find_third_brake_light(const Mat& stats, const Mat& centroids, const vector<
             }
         }
     }
-  //  cout << "I_tb" << max_I_tb << endl;
     return index_third_light;
 } 
 
@@ -240,17 +224,10 @@ void get_rectangle_for_detector(const Mat channel, Mat& filteredStats, Mat& filt
     int maxValue = 255;
     double thresh = threshold(channel, bin_img, 0, maxValue, THRESH_TRIANGLE); //  THRESH_OTSU
 
-    // cout << "Otsu Threshold: " << thresh << endl;
-   // imshow("Image after Otsu Threshold", bin_img);
-
     Mat labels, stats, centroids;
     int num_labels = connectedComponentsWithStats(bin_img, labels, stats, centroids);
 
-    // imwrite(std::string("Otsu_img.png").c_str(), bin_img);
-
     filter_rectangels(stats, centroids, filteredStats, filteredCentroids, resized_img);
- //   drawBoundingRectangles(resized_img, filteredStats);
- //   imwrite(std::string("with_rectangels.png").c_str(), resized_img);
 } 
 
 Mat get_brake_light(const Mat& stats, const vector<int>& vector_max, int index_third_light) {

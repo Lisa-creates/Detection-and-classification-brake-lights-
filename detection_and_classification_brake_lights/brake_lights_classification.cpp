@@ -1,4 +1,4 @@
-#include"brake_lights_classification.h"
+#include "brake_lights_classification.h"
 
 /*
 *\brief Computes features for a rectangular image area

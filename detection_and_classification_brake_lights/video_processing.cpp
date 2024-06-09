@@ -1,4 +1,4 @@
-﻿#include"video_processing.h"
+﻿#include "video_processing.h"
 
 Mat convert_to_Lab(const Mat& image) {
     Mat lab_image;
